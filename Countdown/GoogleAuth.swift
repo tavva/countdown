@@ -137,7 +137,7 @@ enum GoogleAuth {
         let pkce = try PKCE()
         let state = UUID().uuidString
 
-        let listener = try RedirectListener()
+        let listener = try await RedirectListener()
         let port = listener.port
 
         let authURL = buildAuthURL(

@@ -8,14 +8,27 @@ final class RedirectListener: @unchecked Sendable {
     private let listener: NWListener
     let port: UInt16
 
-    init() throws {
-        listener = try NWListener(using: .tcp, on: .any)
-        listener.start(queue: .main)
+    init() async throws {
+        let nwListener = try NWListener(using: .tcp, on: .any)
+        self.listener = nwListener
 
-        guard let assignedPort = listener.port?.rawValue else {
-            throw GoogleAuthError.listenerFailed
+        port = try await withCheckedThrowingContinuation { continuation in
+            nwListener.stateUpdateHandler = { state in
+                switch state {
+                case .ready:
+                    if let assignedPort = nwListener.port?.rawValue {
+                        continuation.resume(returning: assignedPort)
+                    } else {
+                        continuation.resume(throwing: GoogleAuthError.listenerFailed)
+                    }
+                case .failed(let error):
+                    continuation.resume(throwing: error)
+                default:
+                    break
+                }
+            }
+            nwListener.start(queue: .main)
         }
-        self.port = assignedPort
     }
 
     func waitForCode(expectedState: String) async throws -> String {
