@@ -23,12 +23,36 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let circleContent = OverlayContent(manager: calendarManager)
         let panel = OverlayPanel(content: circleContent)
-        panel.ignoresMouseEvents = true
-        panel.orderFront(nil)
+        panel.onTap = { [weak self] in
+            self?.calendarManager.model.dismiss()
+        }
         self.overlayPanel = panel
 
         if calendarManager.isSignedIn {
             calendarManager.startPolling()
+        }
+
+        observeOverlayState()
+    }
+
+    private func observeOverlayState() {
+        withObservationTracking {
+            _ = calendarManager.model.shouldShowOverlay
+        } onChange: { [weak self] in
+            Task { @MainActor [weak self] in
+                self?.updatePanelVisibility()
+                self?.observeOverlayState()
+            }
+        }
+    }
+
+    private func updatePanelVisibility() {
+        if calendarManager.model.shouldShowOverlay {
+            overlayPanel?.ignoresMouseEvents = false
+            overlayPanel?.orderFront(nil)
+        } else {
+            overlayPanel?.ignoresMouseEvents = true
+            overlayPanel?.orderOut(nil)
         }
     }
 }
@@ -42,15 +66,11 @@ struct OverlayContent: View {
                 CircleView(
                     minutesRemaining: manager.model.minutesRemaining,
                     colourProgress: manager.model.colourProgress,
-                    isFlashing: manager.model.isFlashing,
-                    onDismiss: { manager.model.dismiss() }
+                    isFlashing: manager.model.isFlashing
                 )
             }
         }
         .frame(width: 100, height: 100)
         .background(.clear)
-        .onChange(of: manager.model.shouldShowOverlay) { _, visible in
-            (NSApp.delegate as? AppDelegate)?.overlayPanel?.ignoresMouseEvents = !visible
-        }
     }
 }

@@ -7,7 +7,6 @@ struct CircleView: View {
     let minutesRemaining: Int
     let colourProgress: Double  // 0 = green, 1 = red
     let isFlashing: Bool
-    let onDismiss: () -> Void
 
     @State private var flashOpacity: Double = 1.0
 
@@ -33,9 +32,6 @@ struct CircleView: View {
             Text("\(minutesRemaining)")
                 .font(.system(size: 32, weight: .bold, design: .rounded))
                 .foregroundStyle(.white)
-        }
-        .onTapGesture {
-            onDismiss()
         }
         .onChange(of: isFlashing) { _, flashing in
             if flashing {
