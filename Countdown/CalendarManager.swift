@@ -110,6 +110,13 @@ final class CalendarManager {
             }
         }
         enabledCalendarIDs = enabled
+        poll()
+    }
+
+    func setMeetingsOnly(_ value: Bool) {
+        model.meetingsOnly = value
+        model.updateState()
+        poll()
     }
 
     // MARK: - Polling

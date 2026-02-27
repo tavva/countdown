@@ -17,6 +17,7 @@ final class CalendarClient: Sendable {
 
     func fetchEvents(
         accessToken: String,
+        calendarID: String = "primary",
         from start: Date,
         to end: Date
     ) async throws -> [CalendarEvent] {
@@ -24,7 +25,7 @@ final class CalendarClient: Sendable {
         formatter.formatOptions = [.withInternetDateTime]
 
         var components = URLComponents(
-            string: "https://www.googleapis.com/calendar/v3/calendars/primary/events"
+            string: "https://www.googleapis.com/calendar/v3/calendars/\(calendarID)/events"
         )!
         components.queryItems = [
             URLQueryItem(name: "timeMin", value: formatter.string(from: start)),

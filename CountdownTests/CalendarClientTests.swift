@@ -155,6 +155,27 @@ struct CalendarClientTests {
         #expect(params["timeMax"] != nil)
     }
 
+    @Test func fetchEventsUsesProvidedCalendarID() async throws {
+        nonisolated(unsafe) var capturedURL: URL?
+        await MockURLProtocol.requestHandler.set(forHost: "www.googleapis.com") { request in
+            capturedURL = request.url
+            let response = HTTPURLResponse(
+                url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil
+            )!
+            return (response, Data(#"{"items":[]}"#.utf8))
+        }
+
+        let client = CalendarClient(session: session)
+        _ = try await client.fetchEvents(
+            accessToken: "test",
+            calendarID: "work@example.com",
+            from: Date(),
+            to: Date().addingTimeInterval(3600)
+        )
+
+        #expect(capturedURL!.path.contains("/calendars/work@example.com/events"))
+    }
+
     @Test func fetchCalendarsParsesResponse() async throws {
         let json = """
         {

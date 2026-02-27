@@ -41,7 +41,7 @@ struct SettingsView: View {
     private var meetingsOnlyBinding: Binding<Bool> {
         Binding(
             get: { manager.model.meetingsOnly },
-            set: { manager.model.meetingsOnly = $0 }
+            set: { manager.setMeetingsOnly($0) }
         )
     }
 
