@@ -12,6 +12,18 @@ final class CalendarManager {
     private(set) var isSignedIn: Bool = false
     private(set) var userEmail: String?
     private(set) var errorMessage: String?
+    private(set) var calendars: [CalendarInfo] = []
+
+    var enabledCalendarIDs: Set<String> {
+        get {
+            let stored = UserDefaults.standard.stringArray(forKey: "enabledCalendarIDs")
+            guard let stored else { return [] }
+            return Set(stored)
+        }
+        set {
+            UserDefaults.standard.set(Array(newValue), forKey: "enabledCalendarIDs")
+        }
+    }
 
     private let calendarClient = CalendarClient()
     private let keychainService = "com.countdown.google-oauth"
@@ -73,6 +85,31 @@ final class CalendarManager {
         stopPolling()
     }
 
+    // MARK: - Calendar Selection
+
+    func isCalendarEnabled(_ id: String) -> Bool {
+        let enabled = enabledCalendarIDs
+        return enabled.isEmpty || enabled.contains(id)
+    }
+
+    func toggleCalendar(_ id: String) {
+        var enabled = enabledCalendarIDs
+        if enabled.isEmpty {
+            // Switching from "all enabled" to explicit set: add all except the toggled one
+            enabled = Set(calendars.map(\.id))
+            enabled.remove(id)
+        } else if enabled.contains(id) {
+            enabled.remove(id)
+        } else {
+            enabled.insert(id)
+            // If all calendars are now enabled, reset to empty (= all)
+            if enabled == Set(calendars.map(\.id)) {
+                enabled = []
+            }
+        }
+        enabledCalendarIDs = enabled
+    }
+
     // MARK: - Polling
 
     func startPolling() {
@@ -107,18 +144,36 @@ final class CalendarManager {
 
         do {
             let token = try await validAccessToken(config: config)
+
+            let fetchedCalendars = try await calendarClient.fetchCalendars(accessToken: token)
+            calendars = fetchedCalendars
+
             let now = Date()
-            let events = try await calendarClient.fetchEvents(
-                accessToken: token,
-                from: now,
-                to: now.addingTimeInterval(60 * 60)
-            )
+            let end = now.addingTimeInterval(60 * 60)
+
+            let enabledIDs = enabledCalendarIDs
+            let calendarsToFetch = fetchedCalendars.filter { cal in
+                enabledIDs.isEmpty || enabledIDs.contains(cal.id)
+            }
+
+            var allEvents: [CalendarEvent] = []
+            for cal in calendarsToFetch {
+                let events = try await calendarClient.fetchEvents(
+                    accessToken: token,
+                    calendarID: cal.id,
+                    from: now,
+                    to: end
+                )
+                allEvents.append(contentsOf: events)
+            }
+
+            allEvents.sort { $0.startTime < $1.startTime }
 
             let filtered: [CalendarEvent]
             if model.meetingsOnly {
-                filtered = events.filter { $0.hasOtherAttendees }
+                filtered = allEvents.filter { $0.hasOtherAttendees }
             } else {
-                filtered = events
+                filtered = allEvents
             }
 
             model.setEvents(filtered)
