@@ -1,4 +1,4 @@
-// ABOUTME: Fetches and parses events from the Google Calendar API.
+// ABOUTME: Fetches calendar lists and events from the Google Calendar API.
 // ABOUTME: Filters to timed, non-cancelled events and determines attendee presence.
 
 import Foundation
@@ -63,6 +63,34 @@ final class CalendarClient: Sendable {
                 summary: raw.summary ?? "(No title)",
                 startTime: startTime,
                 hasOtherAttendees: !otherAttendees.isEmpty
+            )
+        }
+    }
+
+    func fetchCalendars(accessToken: String) async throws -> [CalendarInfo] {
+        let url = URL(string: "https://www.googleapis.com/calendar/v3/users/me/calendarList")!
+
+        var request = URLRequest(url: url)
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+
+        let (data, response) = try await session.data(for: request)
+        let http = response as! HTTPURLResponse
+
+        guard http.statusCode != 401 else {
+            throw CalendarClientError.unauthorised
+        }
+        guard http.statusCode == 200 else {
+            throw CalendarClientError.httpError(http.statusCode)
+        }
+
+        let decoded = try JSONDecoder().decode(CalendarListResponse.self, from: data)
+        let items = decoded.items ?? []
+
+        return items.map { raw in
+            CalendarInfo(
+                id: raw.id,
+                summary: raw.summary ?? "(No name)",
+                backgroundColor: raw.backgroundColor ?? "#888888"
             )
         }
     }

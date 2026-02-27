@@ -1,4 +1,4 @@
-// ABOUTME: Tests for Google Calendar API event fetching and response parsing.
+// ABOUTME: Tests for Google Calendar API event and calendar list fetching.
 // ABOUTME: Uses MockURLProtocol to simulate API responses.
 
 import Testing
@@ -153,5 +153,39 @@ struct CalendarClientTests {
         #expect(params["orderBy"] == "startTime")
         #expect(params["timeMin"] != nil)
         #expect(params["timeMax"] != nil)
+    }
+
+    @Test func fetchCalendarsParsesResponse() async throws {
+        let json = """
+        {
+            "items": [
+                {
+                    "id": "primary",
+                    "summary": "Work",
+                    "backgroundColor": "#4285f4"
+                },
+                {
+                    "id": "personal@gmail.com",
+                    "summary": "Personal",
+                    "backgroundColor": "#0b8043"
+                }
+            ]
+        }
+        """
+        await MockURLProtocol.requestHandler.set(forHost: "www.googleapis.com") { request in
+            let response = HTTPURLResponse(
+                url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil
+            )!
+            return (response, Data(json.utf8))
+        }
+
+        let client = CalendarClient(session: session)
+        let calendars = try await client.fetchCalendars(accessToken: "test-token")
+
+        #expect(calendars.count == 2)
+        #expect(calendars[0].id == "primary")
+        #expect(calendars[0].summary == "Work")
+        #expect(calendars[0].backgroundColor == "#4285f4")
+        #expect(calendars[1].id == "personal@gmail.com")
     }
 }
