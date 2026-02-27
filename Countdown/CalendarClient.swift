@@ -8,7 +8,7 @@ enum CalendarClientError: Error, Equatable {
     case httpError(Int)
 }
 
-final class CalendarClient {
+final class CalendarClient: Sendable {
     private let session: URLSession
 
     init(session: URLSession = .shared) {

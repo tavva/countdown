@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		0CED5F18979CE96EB1B75F09 /* CalendarEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FEF41D033663CA3CCAAC9FD /* CalendarEvent.swift */; };
+		35A40DF1AB2528DDA738A03B /* CalendarManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B988D907A75DC1D34A694785 /* CalendarManager.swift */; };
 		39AE1F1B809F5804F4C77CCB /* CountdownModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2A473736B067B3F95F414E2 /* CountdownModel.swift */; };
 		4F6DA12C4FA28F42BC29FF4A /* PKCETests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6365FD594C6C7E93823E4C9A /* PKCETests.swift */; };
 		6126072DA56404B8C1D3D59C /* RedirectListener.swift in Sources */ = {isa = PBXBuildFile; fileRef = 362120747BD3E1AB65617E3E /* RedirectListener.swift */; };
@@ -56,6 +57,7 @@
 		9FEF41D033663CA3CCAAC9FD /* CalendarEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarEvent.swift; sourceTree = "<group>"; };
 		A1E2497F6FF6AC1DE35E7D87 /* Keychain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Keychain.swift; sourceTree = "<group>"; };
 		AD5B4E38F0C31F5A732D74BD /* MockURLProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockURLProtocol.swift; sourceTree = "<group>"; };
+		B988D907A75DC1D34A694785 /* CalendarManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarManager.swift; sourceTree = "<group>"; };
 		BCAD7B96A8F665B3C4198BFE /* CountdownTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CountdownTests.swift; sourceTree = "<group>"; };
 		BE2B7F4112F14648B7DC7FC1 /* ConfigTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigTests.swift; sourceTree = "<group>"; };
 		C09221482A02E840785ABFF1 /* PKCE.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PKCE.swift; sourceTree = "<group>"; };
@@ -104,6 +106,7 @@
 				8AE0899F7EBADCD899D9ED8B /* AppDelegate.swift */,
 				340AE2F6D23DF54BB8350652 /* CalendarClient.swift */,
 				9FEF41D033663CA3CCAAC9FD /* CalendarEvent.swift */,
+				B988D907A75DC1D34A694785 /* CalendarManager.swift */,
 				D39B9B347455AA7C2594B879 /* Config.plist */,
 				335AFBC57255775C13E7C464 /* Config.swift */,
 				161DC129FE8C65823060677D /* Countdown.entitlements */,
@@ -220,6 +223,7 @@
 				E975249DE1F850E94AB2E371 /* AppDelegate.swift in Sources */,
 				FF9C477A9BC0816D91307A7C /* CalendarClient.swift in Sources */,
 				0CED5F18979CE96EB1B75F09 /* CalendarEvent.swift in Sources */,
+				35A40DF1AB2528DDA738A03B /* CalendarManager.swift in Sources */,
 				C4785A606F09912FD39A5069 /* Config.swift in Sources */,
 				F6C53A5A7E97A036401B8751 /* CountdownApp.swift in Sources */,
 				39AE1F1B809F5804F4C77CCB /* CountdownModel.swift in Sources */,
