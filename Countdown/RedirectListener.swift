@@ -4,6 +4,27 @@
 import Foundation
 import Network
 
+/// Thread-safe one-shot flag to prevent resuming a continuation twice.
+private final class ContinuationGuard: @unchecked Sendable {
+    private let lock = NSLock()
+    private var _resumed = false
+
+    /// Returns true if this is the first call; false on subsequent calls.
+    func tryResume() -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        guard !_resumed else { return false }
+        _resumed = true
+        return true
+    }
+
+    func markResumed() {
+        lock.lock()
+        _resumed = true
+        lock.unlock()
+    }
+}
+
 final class RedirectListener: @unchecked Sendable {
     private let listener: NWListener
     let port: UInt16
@@ -48,15 +69,23 @@ final class RedirectListener: @unchecked Sendable {
 
     func waitForCode(expectedState: String) async throws -> String {
         try await withCheckedThrowingContinuation { continuation in
+            let guard_ = ContinuationGuard()
+
             // Check if a connection already arrived
             if let connection = pendingConnection {
                 pendingConnection = nil
+                guard_.markResumed()
                 handle(connection: connection, expectedState: expectedState, continuation: continuation)
                 return
             }
 
             // Otherwise wait for next connection
             listener.newConnectionHandler = { [weak self] connection in
+                guard guard_.tryResume() else {
+                    connection.cancel()
+                    return
+                }
+                self?.listener.newConnectionHandler = nil
                 self?.handle(connection: connection, expectedState: expectedState, continuation: continuation)
             }
         }
