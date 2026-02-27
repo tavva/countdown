@@ -23,9 +23,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let circleContent = OverlayContent(manager: calendarManager)
         let panel = OverlayPanel(content: circleContent)
-        panel.onTap = { [weak self] in
-            self?.calendarManager.model.dismiss()
-        }
         self.overlayPanel = panel
 
         if calendarManager.isSignedIn {
