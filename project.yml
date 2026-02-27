@@ -1,0 +1,39 @@
+# ABOUTME: XcodeGen project specification for the Countdown menu bar app.
+# ABOUTME: Defines macOS app target and unit test target.
+
+name: Countdown
+options:
+  deploymentTarget:
+    macOS: "14.0"
+  bundleIdPrefix: com.countdown
+settings:
+  SWIFT_VERSION: "6.0"
+targets:
+  Countdown:
+    type: application
+    platform: macOS
+    sources:
+      - Countdown
+    info:
+      path: Countdown/Info.plist
+      properties:
+        LSUIElement: true
+    settings:
+      INFOPLIST_FILE: Countdown/Info.plist
+      PRODUCT_BUNDLE_IDENTIFIER: com.countdown.app
+      PRODUCT_NAME: Countdown
+    entitlements:
+      path: Countdown/Countdown.entitlements
+      properties:
+        com.apple.security.network.client: true
+        com.apple.security.network.server: true
+  CountdownTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - CountdownTests
+    dependencies:
+      - target: Countdown
+    settings:
+      GENERATE_INFOPLIST_FILE: YES
+      PRODUCT_BUNDLE_IDENTIFIER: com.countdown.tests
