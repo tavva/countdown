@@ -7,7 +7,10 @@ import Observation
 @Observable
 final class CountdownModel {
     var nextEvent: CalendarEvent?
-    var meetingsOnly: Bool = false
+    var meetingsOnly: Bool {
+        get { UserDefaults.standard.bool(forKey: "meetingsOnly") }
+        set { UserDefaults.standard.set(newValue, forKey: "meetingsOnly") }
+    }
 
     private(set) var shouldShowOverlay: Bool = false
     private(set) var minutesRemaining: Int = 0
