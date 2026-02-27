@@ -8,3 +8,6 @@ build/
 
 # macOS metadata
 .DS_Store
+
+# OAuth credentials (user-specific)
+Countdown/Config.plist
