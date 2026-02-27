@@ -25,6 +25,7 @@
 		C4785A606F09912FD39A5069 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 335AFBC57255775C13E7C464 /* Config.swift */; };
 		CA05675B1B218B2AF757927B /* OverlayPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7542D4CDF1AC93678FAE3574 /* OverlayPanel.swift */; };
 		CCDAA23C0262D94C6D01B73A /* Config.plist in Resources */ = {isa = PBXBuildFile; fileRef = D39B9B347455AA7C2594B879 /* Config.plist */; };
+		D665777B4809371D8A144501 /* Config.plist.template in Resources */ = {isa = PBXBuildFile; fileRef = 11F8974166F1B12ECFD9F7F8 /* Config.plist.template */; };
 		D676ECABA4C15FEBEA004AEF /* ConfigTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE2B7F4112F14648B7DC7FC1 /* ConfigTests.swift */; };
 		E975249DE1F850E94AB2E371 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AE0899F7EBADCD899D9ED8B /* AppDelegate.swift */; };
 		EFB158280CDBE8C298C11BFC /* GoogleAuthTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F470913C55A73340956E201 /* GoogleAuthTests.swift */; };
@@ -43,6 +44,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		11F8974166F1B12ECFD9F7F8 /* Config.plist.template */ = {isa = PBXFileReference; path = Config.plist.template; sourceTree = "<group>"; };
 		161DC129FE8C65823060677D /* Countdown.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Countdown.entitlements; sourceTree = "<group>"; };
 		1B915F61511E002C554FDADC /* CountdownApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CountdownApp.swift; sourceTree = "<group>"; };
 		335AFBC57255775C13E7C464 /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
@@ -115,6 +117,7 @@
 				B988D907A75DC1D34A694785 /* CalendarManager.swift */,
 				7044D8E690183663032A80F3 /* CircleView.swift */,
 				D39B9B347455AA7C2594B879 /* Config.plist */,
+				11F8974166F1B12ECFD9F7F8 /* Config.plist.template */,
 				335AFBC57255775C13E7C464 /* Config.swift */,
 				161DC129FE8C65823060677D /* Countdown.entitlements */,
 				1B915F61511E002C554FDADC /* CountdownApp.swift */,
@@ -204,6 +207,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				CCDAA23C0262D94C6D01B73A /* Config.plist in Resources */,
+				D665777B4809371D8A144501 /* Config.plist.template in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
