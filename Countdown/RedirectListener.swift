@@ -7,10 +7,19 @@ import Network
 final class RedirectListener: @unchecked Sendable {
     private let listener: NWListener
     let port: UInt16
+    private var pendingConnection: NWConnection?
 
     init() async throws {
         let nwListener = try NWListener(using: .tcp, on: .any)
         self.listener = nwListener
+
+        // NWListener requires newConnectionHandler before start()
+        nwListener.newConnectionHandler = { [weak nwListener] connection in
+            // Stash the connection — waitForCode() will process it
+            // This is a workaround: we can't set the real handler until
+            // waitForCode is called, but NWListener requires one before start.
+            _ = nwListener
+        }
 
         port = try await withCheckedThrowingContinuation { continuation in
             nwListener.stateUpdateHandler = { state in
@@ -29,10 +38,24 @@ final class RedirectListener: @unchecked Sendable {
             }
             nwListener.start(queue: .main)
         }
+
+        // Now that we're ready, set the real connection handler that stashes
+        // connections for waitForCode to pick up
+        nwListener.newConnectionHandler = { [weak self] connection in
+            self?.pendingConnection = connection
+        }
     }
 
     func waitForCode(expectedState: String) async throws -> String {
         try await withCheckedThrowingContinuation { continuation in
+            // Check if a connection already arrived
+            if let connection = pendingConnection {
+                pendingConnection = nil
+                handle(connection: connection, expectedState: expectedState, continuation: continuation)
+                return
+            }
+
+            // Otherwise wait for next connection
             listener.newConnectionHandler = { [weak self] connection in
                 self?.handle(connection: connection, expectedState: expectedState, continuation: continuation)
             }
