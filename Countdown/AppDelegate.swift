@@ -55,10 +55,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
             let height: CGFloat = calendarManager.model.showingEventDetails ? 150 : 100
             let width: CGFloat = 200
-            let dy = height - panel.frame.height
+            let topEdge = panel.frame.origin.y + panel.frame.height
             panel.setFrame(NSRect(
                 x: panel.frame.origin.x,
-                y: panel.frame.origin.y - dy,
+                y: topEdge - height,
                 width: width,
                 height: height
             ), display: true)
@@ -84,6 +84,12 @@ struct OverlayContent: View {
         Group {
             if manager.model.shouldShowOverlay {
                 VStack(spacing: 4) {
+                    CircleView(
+                        minutesRemaining: manager.model.minutesRemaining,
+                        colourProgress: manager.model.colourProgress,
+                        isFlashing: manager.model.isFlashing
+                    )
+
                     if manager.model.showingEventDetails, let event = manager.model.nextEvent {
                         VStack(spacing: 2) {
                             Text(event.summary)
@@ -99,12 +105,6 @@ struct OverlayContent: View {
                         .padding(.vertical, 6)
                         .background(.black.opacity(0.7), in: RoundedRectangle(cornerRadius: 8))
                     }
-
-                    CircleView(
-                        minutesRemaining: manager.model.minutesRemaining,
-                        colourProgress: manager.model.colourProgress,
-                        isFlashing: manager.model.isFlashing
-                    )
                 }
             }
         }
