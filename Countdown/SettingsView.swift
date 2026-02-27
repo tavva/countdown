@@ -1,5 +1,5 @@
 // ABOUTME: Menu bar popover showing event status, Google account controls, and event filter.
-// ABOUTME: Provides connect/disconnect for Google Calendar and a meetings-only toggle.
+// ABOUTME: Provides connect/disconnect for Google Calendar, a meetings-only toggle, and calendar selection.
 
 import SwiftUI
 
