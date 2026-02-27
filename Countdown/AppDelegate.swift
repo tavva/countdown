@@ -23,6 +23,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let circleContent = OverlayContent(manager: calendarManager)
         let panel = OverlayPanel(content: circleContent)
+        panel.ignoresMouseEvents = true
+        panel.orderFront(nil)
         self.overlayPanel = panel
 
         if calendarManager.isSignedIn {
@@ -48,11 +50,7 @@ struct OverlayContent: View {
         .frame(width: 100, height: 100)
         .background(.clear)
         .onChange(of: manager.model.shouldShowOverlay) { _, visible in
-            if visible {
-                (NSApp.delegate as? AppDelegate)?.overlayPanel?.orderFront(nil)
-            } else {
-                (NSApp.delegate as? AppDelegate)?.overlayPanel?.orderOut(nil)
-            }
+            (NSApp.delegate as? AppDelegate)?.overlayPanel?.ignoresMouseEvents = !visible
         }
     }
 }
