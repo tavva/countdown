@@ -6,11 +6,12 @@ import CryptoKit
 import Foundation
 import Network
 
-enum GoogleAuthError: Error {
+enum GoogleAuthError: Error, Equatable {
     case exchangeFailed(Int, Data)
     case refreshFailed(Int, Data)
     case revocationFailed(Int)
     case missingCode
+    case stateMismatch
     case listenerFailed
 }
 
@@ -148,7 +149,7 @@ enum GoogleAuth {
 
         NSWorkspace.shared.open(authURL)
 
-        let code = try await listener.waitForCode()
+        let code = try await listener.waitForCode(expectedState: state)
 
         return try await exchangeCode(
             code,

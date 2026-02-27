@@ -18,16 +18,26 @@ final class RedirectListener: @unchecked Sendable {
         self.port = assignedPort
     }
 
-    func waitForCode() async throws -> String {
+    func waitForCode(expectedState: String) async throws -> String {
         try await withCheckedThrowingContinuation { continuation in
             listener.newConnectionHandler = { [weak self] connection in
-                self?.handle(connection: connection, continuation: continuation)
+                self?.handle(connection: connection, expectedState: expectedState, continuation: continuation)
             }
         }
     }
 
+    static func extractCode(from components: URLComponents?, expectedState: String) throws -> String {
+        let queryItems = components?.queryItems ?? []
+        let state = queryItems.first(where: { $0.name == "state" })?.value
+        guard state == expectedState else { throw GoogleAuthError.stateMismatch }
+        let code = queryItems.first(where: { $0.name == "code" })?.value
+        guard let code else { throw GoogleAuthError.missingCode }
+        return code
+    }
+
     private func handle(
         connection: NWConnection,
+        expectedState: String,
         continuation: CheckedContinuation<String, Error>
     ) {
         connection.start(queue: .main)
@@ -45,9 +55,18 @@ final class RedirectListener: @unchecked Sendable {
             let firstLine = request.components(separatedBy: "\r\n").first ?? ""
             let path = firstLine.components(separatedBy: " ").dropFirst().first ?? ""
             let components = URLComponents(string: "http://localhost\(path)")
-            let code = components?.queryItems?.first(where: { $0.name == "code" })?.value
 
-            let html = code != nil
+            let succeeded: Bool
+            do {
+                let code = try Self.extractCode(from: components, expectedState: expectedState)
+                succeeded = true
+                continuation.resume(returning: code)
+            } catch {
+                succeeded = false
+                continuation.resume(throwing: error)
+            }
+
+            let html = succeeded
                 ? "<html><body><h2>Authorisation successful. You may close this window.</h2></body></html>"
                 : "<html><body><h2>Authorisation failed.</h2></body></html>"
             let response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: \(html.utf8.count)\r\nConnection: close\r\n\r\n\(html)"
@@ -55,12 +74,6 @@ final class RedirectListener: @unchecked Sendable {
             connection.send(content: response.data(using: .utf8), completion: .contentProcessed { _ in
                 connection.cancel()
             })
-
-            if let code {
-                continuation.resume(returning: code)
-            } else {
-                continuation.resume(throwing: GoogleAuthError.missingCode)
-            }
         }
     }
 }
