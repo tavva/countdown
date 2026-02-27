@@ -18,6 +18,11 @@ struct SettingsView: View {
 
             filterSection
 
+            if manager.isSignedIn && !manager.calendars.isEmpty {
+                Divider()
+                calendarsSection
+            }
+
             Spacer()
 
             HStack {
@@ -30,7 +35,7 @@ struct SettingsView: View {
             }
         }
         .padding()
-        .frame(width: 280, height: 260)
+        .frame(minWidth: 280, maxWidth: 280, minHeight: 260)
     }
 
     private var meetingsOnlyBinding: Binding<Bool> {
@@ -105,5 +110,51 @@ struct SettingsView: View {
             }
             .pickerStyle(.segmented)
         }
+    }
+
+    @ViewBuilder
+    private var calendarsSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Calendars")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
+            ScrollView {
+                VStack(spacing: 4) {
+                    ForEach(manager.calendars) { calendar in
+                        HStack {
+                            Circle()
+                                .fill(Color(hex: calendar.backgroundColor))
+                                .frame(width: 10, height: 10)
+                            Text(calendar.summary)
+                                .font(.body)
+                                .lineLimit(1)
+                            Spacer()
+                            Toggle("", isOn: Binding(
+                                get: { manager.isCalendarEnabled(calendar.id) },
+                                set: { _ in manager.toggleCalendar(calendar.id) }
+                            ))
+                            .toggleStyle(.switch)
+                            .labelsHidden()
+                        }
+                    }
+                }
+            }
+            .frame(maxHeight: 120)
+        }
+    }
+}
+
+extension Color {
+    init(hex: String) {
+        let hex = hex.trimmingCharacters(in: CharacterSet(charactersIn: "#"))
+        let scanner = Scanner(string: hex)
+        var rgb: UInt64 = 0
+        scanner.scanHexInt64(&rgb)
+        self.init(
+            red: Double((rgb >> 16) & 0xFF) / 255.0,
+            green: Double((rgb >> 8) & 0xFF) / 255.0,
+            blue: Double(rgb & 0xFF) / 255.0
+        )
     }
 }
