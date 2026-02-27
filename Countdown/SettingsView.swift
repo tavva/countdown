@@ -42,8 +42,7 @@ struct SettingsView: View {
 
     @ViewBuilder
     private var statusSection: some View {
-        if let event = manager.model.nextEvent,
-           manager.model.shouldShowOverlay {
+        if let event = manager.model.nextEvent {
             Text("Next: \(event.summary) in \(manager.model.minutesRemaining) min")
                 .font(.headline)
         } else if manager.isSignedIn {

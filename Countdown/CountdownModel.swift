@@ -19,6 +19,10 @@ final class CountdownModel {
 
     private var dismissedEventID: String?
 
+    func setEvents(_ events: [CalendarEvent]) {
+        nextEvent = events.first { $0.startTime.timeIntervalSinceNow >= -5 * 60 }
+    }
+
     func updateState() {
         guard let event = nextEvent else {
             shouldShowOverlay = false

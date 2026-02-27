@@ -127,6 +127,27 @@ struct CountdownModelTests {
         #expect(model.shouldShowOverlay == true)
     }
 
+    @Test func skipsEventPastDisplayWindow() {
+        let model = CountdownModel()
+        model.setEvents([
+            CalendarEvent(
+                id: "past",
+                summary: "Old Meeting",
+                startTime: Date().addingTimeInterval(-10 * 60),
+                hasOtherAttendees: true
+            ),
+            CalendarEvent(
+                id: "upcoming",
+                summary: "Next Meeting",
+                startTime: Date().addingTimeInterval(20 * 60),
+                hasOtherAttendees: true
+            ),
+        ])
+        model.updateState()
+        #expect(model.nextEvent?.id == "upcoming")
+        #expect(model.shouldShowOverlay == true)
+    }
+
     @Test func allEventsShowsSoloEvents() {
         let model = CountdownModel()
         model.meetingsOnly = false

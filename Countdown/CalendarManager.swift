@@ -67,7 +67,7 @@ final class CalendarManager {
         tokenExpiry = nil
         isSignedIn = false
         userEmail = nil
-        model.nextEvent = nil
+        model.setEvents([])
 
         try? Keychain.delete(service: keychainService, account: keychainAccount)
         stopPolling()
@@ -121,7 +121,7 @@ final class CalendarManager {
                 filtered = events
             }
 
-            model.nextEvent = filtered.first
+            model.setEvents(filtered)
             model.updateState()
             errorMessage = nil
         } catch CalendarClientError.unauthorised {
