@@ -1,20 +1,29 @@
 // ABOUTME: Mock URL protocol for intercepting HTTP requests in tests.
-// ABOUTME: Uses an actor for thread-safe handler storage.
+// ABOUTME: Uses an actor for thread-safe handler storage, keyed by URL host for cross-suite isolation.
 
 import Foundation
 
 actor MockRequestHandler {
     typealias Handler = @Sendable (URLRequest) throws -> (HTTPURLResponse, Data)
 
-    private var handler: Handler?
+    private var handlers: [String: Handler] = [:]
+    private var defaultHandler: Handler?
 
     func set(_ handler: @escaping Handler) {
-        self.handler = handler
+        defaultHandler = handler
+    }
+
+    func set(forHost host: String, _ handler: @escaping Handler) {
+        handlers[host] = handler
     }
 
     func handle(_ request: URLRequest) throws -> (HTTPURLResponse, Data) {
-        guard let handler else {
-            fatalError("MockRequestHandler: no handler set")
+        let host = request.url?.host ?? ""
+        if let handler = handlers[host] {
+            return try handler(request)
+        }
+        guard let handler = defaultHandler else {
+            fatalError("MockRequestHandler: no handler set for host '\(host)'")
         }
         return try handler(request)
     }

@@ -35,7 +35,7 @@ struct GoogleAuthTests {
     }
 
     @Test func tokenExchangeDecodesResponse() async throws {
-        await MockURLProtocol.requestHandler.set { request in
+        await MockURLProtocol.requestHandler.set(forHost: "oauth2.googleapis.com") { request in
             let body = """
             {
                 "access_token": "ya29.test",
@@ -66,7 +66,7 @@ struct GoogleAuthTests {
     }
 
     @Test func tokenRefreshDecodesResponse() async throws {
-        await MockURLProtocol.requestHandler.set { request in
+        await MockURLProtocol.requestHandler.set(forHost: "oauth2.googleapis.com") { request in
             let body = """
             {
                 "access_token": "ya29.refreshed",
