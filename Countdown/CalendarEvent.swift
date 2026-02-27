@@ -47,6 +47,7 @@ struct CalendarEvent {
     let id: String
     let summary: String
     let startTime: Date
+    let endTime: Date
     let hasOtherAttendees: Bool
 }
 

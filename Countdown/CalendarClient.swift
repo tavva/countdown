@@ -52,7 +52,8 @@ final class CalendarClient: Sendable {
 
         return rawEvents.compactMap { raw in
             guard let startDT = raw.start, !startDT.isAllDay,
-                  let startTime = startDT.resolved else {
+                  let startTime = startDT.resolved,
+                  let endTime = raw.end?.resolved else {
                 return nil
             }
             guard raw.status != "cancelled" else { return nil }
@@ -63,6 +64,7 @@ final class CalendarClient: Sendable {
                 id: raw.id,
                 summary: raw.summary ?? "(No title)",
                 startTime: startTime,
+                endTime: endTime,
                 hasOtherAttendees: !otherAttendees.isEmpty
             )
         }

@@ -18,6 +18,7 @@ struct CountdownModelTests {
             id: "1",
             summary: "Standup",
             startTime: Date().addingTimeInterval(30 * 60),
+            endTime: Date().addingTimeInterval(60 * 60),
             hasOtherAttendees: true
         )
         model.updateState()
@@ -31,6 +32,7 @@ struct CountdownModelTests {
             id: "1",
             summary: "Meeting",
             startTime: Date().addingTimeInterval(60 * 60),
+            endTime: Date().addingTimeInterval(90 * 60),
             hasOtherAttendees: true
         )
         model.updateState()
@@ -43,6 +45,7 @@ struct CountdownModelTests {
             id: "1",
             summary: "Meeting",
             startTime: Date().addingTimeInterval(60),
+            endTime: Date().addingTimeInterval(30 * 60),
             hasOtherAttendees: true
         )
         model.updateState()
@@ -55,6 +58,7 @@ struct CountdownModelTests {
             id: "1",
             summary: "Meeting",
             startTime: Date().addingTimeInterval(30),
+            endTime: Date().addingTimeInterval(30 * 60),
             hasOtherAttendees: true
         )
         model.updateState()
@@ -67,6 +71,7 @@ struct CountdownModelTests {
             id: "1",
             summary: "Meeting",
             startTime: Date().addingTimeInterval(-3 * 60),
+            endTime: Date().addingTimeInterval(27 * 60),
             hasOtherAttendees: true
         )
         model.updateState()
@@ -80,6 +85,7 @@ struct CountdownModelTests {
             id: "1",
             summary: "Meeting",
             startTime: Date().addingTimeInterval(-6 * 60),
+            endTime: Date().addingTimeInterval(24 * 60),
             hasOtherAttendees: true
         )
         model.updateState()
@@ -92,6 +98,7 @@ struct CountdownModelTests {
             id: "evt-1",
             summary: "Meeting",
             startTime: Date().addingTimeInterval(30),
+            endTime: Date().addingTimeInterval(30 * 60),
             hasOtherAttendees: true
         )
         model.updateState()
@@ -108,6 +115,7 @@ struct CountdownModelTests {
             id: "1",
             summary: "Focus Time",
             startTime: Date().addingTimeInterval(30 * 60),
+            endTime: Date().addingTimeInterval(60 * 60),
             hasOtherAttendees: false
         )
         model.updateState()
@@ -121,6 +129,7 @@ struct CountdownModelTests {
             id: "1",
             summary: "Standup",
             startTime: Date().addingTimeInterval(30 * 60),
+            endTime: Date().addingTimeInterval(60 * 60),
             hasOtherAttendees: true
         )
         model.updateState()
@@ -134,18 +143,69 @@ struct CountdownModelTests {
                 id: "past",
                 summary: "Old Meeting",
                 startTime: Date().addingTimeInterval(-10 * 60),
+                endTime: Date().addingTimeInterval(20 * 60),
                 hasOtherAttendees: true
             ),
             CalendarEvent(
                 id: "upcoming",
                 summary: "Next Meeting",
                 startTime: Date().addingTimeInterval(20 * 60),
+                endTime: Date().addingTimeInterval(50 * 60),
                 hasOtherAttendees: true
             ),
         ])
         model.updateState()
         #expect(model.nextEvent?.id == "upcoming")
         #expect(model.shouldShowOverlay == true)
+    }
+
+    @Test func toggleEventDetailsFlipsState() {
+        let model = CountdownModel()
+        #expect(model.showingEventDetails == false)
+        model.toggleEventDetails()
+        #expect(model.showingEventDetails == true)
+        model.toggleEventDetails()
+        #expect(model.showingEventDetails == false)
+    }
+
+    @Test func eventDetailsResetWhenEventChanges() {
+        let model = CountdownModel()
+        model.nextEvent = CalendarEvent(
+            id: "1",
+            summary: "Meeting",
+            startTime: Date().addingTimeInterval(30 * 60),
+            endTime: Date().addingTimeInterval(60 * 60),
+            hasOtherAttendees: true
+        )
+        model.updateState()
+        model.toggleEventDetails()
+        #expect(model.showingEventDetails == true)
+
+        model.setEvents([CalendarEvent(
+            id: "2",
+            summary: "Other meeting",
+            startTime: Date().addingTimeInterval(20 * 60),
+            endTime: Date().addingTimeInterval(50 * 60),
+            hasOtherAttendees: true
+        )])
+        #expect(model.showingEventDetails == false)
+    }
+
+    @Test func eventDetailsResetWhenDismissed() {
+        let model = CountdownModel()
+        model.nextEvent = CalendarEvent(
+            id: "1",
+            summary: "Meeting",
+            startTime: Date().addingTimeInterval(30 * 60),
+            endTime: Date().addingTimeInterval(60 * 60),
+            hasOtherAttendees: true
+        )
+        model.updateState()
+        model.toggleEventDetails()
+        #expect(model.showingEventDetails == true)
+
+        model.dismiss()
+        #expect(model.showingEventDetails == false)
     }
 
     @Test func allEventsShowsSoloEvents() {
@@ -155,6 +215,7 @@ struct CountdownModelTests {
             id: "1",
             summary: "Focus Time",
             startTime: Date().addingTimeInterval(30 * 60),
+            endTime: Date().addingTimeInterval(60 * 60),
             hasOtherAttendees: false
         )
         model.updateState()

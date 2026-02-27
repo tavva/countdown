@@ -23,6 +23,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let circleContent = OverlayContent(manager: calendarManager)
         let panel = OverlayPanel(content: circleContent)
+        panel.onTap = { [weak self] in
+            self?.calendarManager.model.toggleEventDetails()
+        }
         self.overlayPanel = panel
 
         if calendarManager.isSignedIn {
@@ -35,21 +38,35 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func observeOverlayState() {
         withObservationTracking {
             _ = calendarManager.model.shouldShowOverlay
+            _ = calendarManager.model.showingEventDetails
         } onChange: { [weak self] in
             Task { @MainActor [weak self] in
-                self?.updatePanelVisibility()
+                self?.updatePanel()
                 self?.observeOverlayState()
             }
         }
     }
 
-    private func updatePanelVisibility() {
+    private func updatePanel() {
+        guard let panel = overlayPanel else { return }
+
         if calendarManager.model.shouldShowOverlay {
-            overlayPanel?.ignoresMouseEvents = false
-            overlayPanel?.orderFront(nil)
+            panel.ignoresMouseEvents = false
+
+            let height: CGFloat = calendarManager.model.showingEventDetails ? 150 : 100
+            let width: CGFloat = 200
+            let dy = height - panel.frame.height
+            panel.setFrame(NSRect(
+                x: panel.frame.origin.x,
+                y: panel.frame.origin.y - dy,
+                width: width,
+                height: height
+            ), display: true)
+
+            panel.orderFront(nil)
         } else {
-            overlayPanel?.ignoresMouseEvents = true
-            overlayPanel?.orderOut(nil)
+            panel.ignoresMouseEvents = true
+            panel.orderOut(nil)
         }
     }
 }
@@ -57,17 +74,42 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 struct OverlayContent: View {
     @Bindable var manager: CalendarManager
 
+    private var timeFormatter: DateFormatter {
+        let f = DateFormatter()
+        f.dateFormat = "HH:mm"
+        return f
+    }
+
     var body: some View {
         Group {
             if manager.model.shouldShowOverlay {
-                CircleView(
-                    minutesRemaining: manager.model.minutesRemaining,
-                    colourProgress: manager.model.colourProgress,
-                    isFlashing: manager.model.isFlashing
-                )
+                VStack(spacing: 4) {
+                    if manager.model.showingEventDetails, let event = manager.model.nextEvent {
+                        VStack(spacing: 2) {
+                            Text(event.summary)
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(.white)
+                                .lineLimit(2)
+                                .multilineTextAlignment(.center)
+                            Text("\(timeFormatter.string(from: event.startTime)) – \(timeFormatter.string(from: event.endTime))")
+                                .font(.system(size: 11))
+                                .foregroundStyle(.white.opacity(0.7))
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(.black.opacity(0.7), in: RoundedRectangle(cornerRadius: 8))
+                    }
+
+                    CircleView(
+                        minutesRemaining: manager.model.minutesRemaining,
+                        colourProgress: manager.model.colourProgress,
+                        isFlashing: manager.model.isFlashing
+                    )
+                }
             }
         }
-        .frame(width: 100, height: 100)
+        .frame(width: 200)
+        .fixedSize(horizontal: false, vertical: true)
         .background(.clear)
     }
 }

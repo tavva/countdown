@@ -23,13 +23,15 @@ enum OverlayPosition {
 }
 
 final class OverlayPanel: NSPanel {
+    var onTap: (() -> Void)?
+
     private var initialMouseLocation: CGPoint = .zero
     private var initialWindowOrigin: CGPoint = .zero
     private var didDrag = false
 
     init<Content: View>(content: Content) {
         super.init(
-            contentRect: NSRect(x: 0, y: 0, width: 100, height: 100),
+            contentRect: NSRect(x: 0, y: 0, width: 200, height: 100),
             styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered,
             defer: false
@@ -82,6 +84,8 @@ final class OverlayPanel: NSPanel {
     override func mouseUp(with event: NSEvent) {
         if didDrag {
             OverlayPosition.save(frame.origin)
+        } else {
+            onTap?()
         }
     }
 
@@ -89,9 +93,9 @@ final class OverlayPanel: NSPanel {
         guard let screen = NSScreen.main else { return }
         let padding: CGFloat = 20
         let frame = NSRect(
-            x: screen.visibleFrame.maxX - 100 - padding,
+            x: screen.visibleFrame.maxX - 200 - padding,
             y: screen.visibleFrame.minY + padding,
-            width: 100,
+            width: 200,
             height: 100
         )
         setFrame(frame, display: true)

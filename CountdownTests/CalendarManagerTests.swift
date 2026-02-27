@@ -14,6 +14,7 @@ struct CalendarManagerTests {
             id: "1",
             summary: "Focus Time",
             startTime: Date().addingTimeInterval(30 * 60),
+            endTime: Date().addingTimeInterval(60 * 60),
             hasOtherAttendees: false
         )
         manager.model.updateState()
@@ -32,6 +33,7 @@ struct CalendarManagerTests {
             id: "1",
             summary: "Focus Time",
             startTime: Date().addingTimeInterval(30 * 60),
+            endTime: Date().addingTimeInterval(60 * 60),
             hasOtherAttendees: false
         )
         manager.model.updateState()

@@ -44,6 +44,7 @@ struct CalendarClientTests {
         #expect(events.count == 1)
         #expect(events[0].summary == "Team Standup")
         #expect(events[0].hasOtherAttendees == true)
+        #expect(events[0].endTime == ISO8601DateFormatter().date(from: "2026-03-01T10:30:00Z"))
     }
 
     @Test func filtersAllDayEvents() async throws {
