@@ -1,5 +1,5 @@
-// ABOUTME: Decodable models for Google Calendar API event responses.
-// ABOUTME: Distinguishes timed events from all-day events and tracks attendee presence.
+// ABOUTME: Decodable models for Google Calendar API responses.
+// ABOUTME: Covers calendar list entries, event details, and attendee presence.
 
 import Foundation
 
@@ -48,4 +48,20 @@ struct CalendarEvent {
     let summary: String
     let startTime: Date
     let hasOtherAttendees: Bool
+}
+
+struct CalendarListResponse: Decodable {
+    let items: [RawCalendarInfo]?
+}
+
+struct RawCalendarInfo: Decodable {
+    let id: String
+    let summary: String?
+    let backgroundColor: String?
+}
+
+struct CalendarInfo: Identifiable, Equatable {
+    let id: String
+    let summary: String
+    let backgroundColor: String
 }
