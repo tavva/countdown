@@ -6,15 +6,26 @@ import SwiftUI
 @main
 struct CountdownApp: App {
     @NSApplicationDelegateAdaptor private var appDelegate: AppDelegate
+    @State private var manager: CalendarManager
+
+    init() {
+        let mgr = CalendarManager()
+        mgr.config = Config.load()
+        _manager = State(initialValue: mgr)
+    }
 
     var body: some Scene {
         MenuBarExtra {
-            Text("Countdown")
-                .frame(width: 280, height: 200)
-                .padding()
+            SettingsView(manager: manager)
+                .onAppear {
+                    appDelegate.setupOverlay(manager: manager)
+                    if manager.isSignedIn {
+                        manager.startPolling()
+                    }
+                }
         } label: {
             Image(systemName: "circle.fill")
-                .foregroundStyle(.gray)
+                .foregroundStyle(manager.model.shouldShowOverlay ? .red : .gray)
         }
         .menuBarExtraStyle(.window)
     }
