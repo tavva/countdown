@@ -5,7 +5,7 @@ import Testing
 import Foundation
 @testable import Countdown
 
-@Suite("CountdownModel")
+@Suite("CountdownModel", .serialized)
 struct CountdownModelTests {
     @Test func noEventMeansHidden() {
         let model = CountdownModel()
