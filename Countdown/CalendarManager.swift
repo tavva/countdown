@@ -80,6 +80,8 @@ final class CalendarManager {
         isSignedIn = false
         userEmail = nil
         model.setEvents([])
+        calendars = []
+        UserDefaults.standard.removeObject(forKey: "enabledCalendarIDs")
 
         try? Keychain.delete(service: keychainService, account: keychainAccount)
         stopPolling()
