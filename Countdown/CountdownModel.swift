@@ -35,6 +35,7 @@ final class CountdownModel {
     }
 
     private var dismissedEventID: String?
+    private var flashAcknowledgedEventID: String?
 
     func setEvents(_ events: [CalendarEvent]) {
         nextEvent = events.first { $0.startTime.timeIntervalSinceNow >= -5 * 60 }
@@ -42,6 +43,11 @@ final class CountdownModel {
 
     func toggleEventDetails() {
         showingEventDetails.toggle()
+    }
+
+    func acknowledgeFlash() {
+        flashAcknowledgedEventID = nextEvent?.id
+        isFlashing = false
     }
 
     func updateState() {
@@ -85,7 +91,8 @@ final class CountdownModel {
         }
         colourProgress = min(1.0, max(0.0, colourProgress))
 
-        isFlashing = minutesUntil < 1 && minutesUntil >= -5
+        let shouldFlash = minutesUntil < 1 && minutesUntil >= -5
+        isFlashing = shouldFlash && flashAcknowledgedEventID != event.id
     }
 
     private func setIdleOrHidden() {

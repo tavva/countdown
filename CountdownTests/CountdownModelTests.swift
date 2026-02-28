@@ -286,6 +286,67 @@ struct CountdownModelTests {
         #expect(model.shouldShowOverlay == true)
     }
 
+    // MARK: - Flash acknowledgement
+
+    @Test func acknowledgeFlashStopsFlashing() {
+        let model = CountdownModel()
+        model.nextEvent = CalendarEvent(
+            id: "evt-1",
+            summary: "Meeting",
+            startTime: Date().addingTimeInterval(30),
+            endTime: Date().addingTimeInterval(30 * 60),
+            hasOtherAttendees: true
+        )
+        model.updateState()
+        #expect(model.isFlashing == true)
+
+        model.acknowledgeFlash()
+        #expect(model.isFlashing == false)
+    }
+
+    @Test func acknowledgedFlashStaysOffAcrossUpdates() {
+        let model = CountdownModel()
+        model.nextEvent = CalendarEvent(
+            id: "evt-1",
+            summary: "Meeting",
+            startTime: Date().addingTimeInterval(30),
+            endTime: Date().addingTimeInterval(30 * 60),
+            hasOtherAttendees: true
+        )
+        model.updateState()
+        model.acknowledgeFlash()
+
+        // Simulate the next 1-second tick
+        model.updateState()
+        #expect(model.isFlashing == false)
+        #expect(model.shouldShowOverlay == true)
+    }
+
+    @Test func flashAcknowledgementResetsForNewEvent() {
+        let model = CountdownModel()
+        model.nextEvent = CalendarEvent(
+            id: "evt-1",
+            summary: "Meeting",
+            startTime: Date().addingTimeInterval(30),
+            endTime: Date().addingTimeInterval(30 * 60),
+            hasOtherAttendees: true
+        )
+        model.updateState()
+        model.acknowledgeFlash()
+        #expect(model.isFlashing == false)
+
+        // Different event starts flashing
+        model.nextEvent = CalendarEvent(
+            id: "evt-2",
+            summary: "Another Meeting",
+            startTime: Date().addingTimeInterval(20),
+            endTime: Date().addingTimeInterval(30 * 60),
+            hasOtherAttendees: true
+        )
+        model.updateState()
+        #expect(model.isFlashing == true)
+    }
+
     // MARK: - Countdown ring progress
 
     @Test func ringProgressIsFullAt60Minutes() {

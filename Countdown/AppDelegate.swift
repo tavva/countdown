@@ -26,7 +26,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let circleContent = OverlayContent(manager: calendarManager)
         let panel = OverlayPanel(content: circleContent)
         panel.onTap = { [weak self] in
-            self?.calendarManager.model.toggleEventDetails()
+            guard let model = self?.calendarManager.model else { return }
+            if model.isFlashing {
+                model.acknowledgeFlash()
+            } else {
+                model.toggleEventDetails()
+            }
         }
         panel.onPositionChange = { [weak self] in
             guard let self, let panel = self.overlayPanel else { return }
