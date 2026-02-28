@@ -57,7 +57,7 @@ final class OverlayPanel: NSPanel {
         }
     }
 
-    override var canBecomeKey: Bool { true }
+    override var canBecomeKey: Bool { false }
     override var canBecomeMain: Bool { false }
 
     override func mouseDown(with event: NSEvent) {
