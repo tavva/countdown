@@ -7,14 +7,10 @@ import Foundation
 
 @Suite("OverlayPosition", .serialized)
 struct OverlayPositionTests {
-    let defaults = UserDefaults.standard
-    let key = "overlayPosition"
-
-    init() {
-        defaults.removeObject(forKey: key)
-    }
+    private let _snapshot = DefaultsSnapshot(keys: ["overlayPosition"])
 
     @Test func restoreReturnsNilWhenNoSavedPosition() {
+        UserDefaults.standard.removeObject(forKey: "overlayPosition")
         #expect(OverlayPosition.restore() == nil)
     }
 

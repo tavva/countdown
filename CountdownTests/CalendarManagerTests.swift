@@ -5,8 +5,12 @@ import Testing
 import Foundation
 @testable import Countdown
 
-@Suite("CalendarManager")
+@Suite("CalendarManager", .serialized)
 struct CalendarManagerTests {
+    private let _snapshot = DefaultsSnapshot(keys: [
+        "meetingsOnly", "alwaysShowCircle",
+    ])
+
     @Test @MainActor func setMeetingsOnlyUpdatesOverlayImmediately() {
         let manager = CalendarManager()
         manager.model.alwaysShowCircle = false

@@ -7,6 +7,10 @@ import Foundation
 
 @Suite("CountdownModel", .serialized)
 struct CountdownModelTests {
+    private let _snapshot = DefaultsSnapshot(keys: [
+        "meetingsOnly", "alwaysShowCircle", "showingEventDetails",
+    ])
+
     @Test func noEventShowsIdleWhenAlwaysShowCircle() {
         let model = CountdownModel()
         model.alwaysShowCircle = true
@@ -250,9 +254,6 @@ struct CountdownModelTests {
             hasOtherAttendees: true
         )])
         #expect(model.showingEventDetails == false)
-
-        // Restore default
-        model.showingEventDetails = true
     }
 
     @Test func showingEventDetailsSurvivesDismiss() {
@@ -346,5 +347,33 @@ struct CountdownModelTests {
         model.alwaysShowCircle = true
         model.updateState()
         #expect(model.ringProgress == 0.0)
+    }
+}
+
+// MARK: - Test helper
+
+/// Saves and restores UserDefaults keys to prevent test pollution.
+/// Store as a property on test structs — deinit restores values when the struct goes out of scope.
+final class DefaultsSnapshot {
+    private let saved: [String: Any?]
+    private let defaults: UserDefaults
+
+    init(keys: [String], defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+        var saved: [String: Any?] = [:]
+        for key in keys {
+            saved[key] = defaults.object(forKey: key)
+        }
+        self.saved = saved
+    }
+
+    deinit {
+        for (key, value) in saved {
+            if let value {
+                defaults.set(value, forKey: key)
+            } else {
+                defaults.removeObject(forKey: key)
+            }
+        }
     }
 }
