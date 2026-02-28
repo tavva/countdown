@@ -8,6 +8,7 @@ struct CircleView: View {
     let colourProgress: Double  // 0 = green, 1 = red
     let isFlashing: Bool
     let isIdle: Bool
+    let meetingRingProgress: Double  // 0 = no ring, 1 = full ring
 
     @State private var flashOpacity: Double = 1.0
 
@@ -32,6 +33,14 @@ struct CircleView: View {
                 .fill(circleColour)
                 .opacity(isFlashing ? flashOpacity : 0.85)
                 .frame(width: 80, height: 80)
+
+            if meetingRingProgress > 0 {
+                Circle()
+                    .trim(from: 0, to: meetingRingProgress)
+                    .stroke(Color.white.opacity(0.6), lineWidth: 3)
+                    .rotationEffect(.degrees(-90))
+                    .frame(width: 86, height: 86)
+            }
 
             if !isIdle {
                 Text("\(minutesRemaining)")

@@ -96,7 +96,8 @@ struct OverlayContent: View {
                         minutesRemaining: manager.model.minutesRemaining,
                         colourProgress: manager.model.colourProgress,
                         isFlashing: manager.model.isFlashing,
-                        isIdle: manager.model.isIdle
+                        isIdle: manager.model.isIdle,
+                        meetingRingProgress: manager.model.meetingRingProgress
                     )
 
                     if manager.model.showingEventDetails, let event = manager.model.nextEvent {

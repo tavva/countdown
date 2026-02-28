@@ -125,7 +125,7 @@ struct CountdownModelTests {
         )
         model.updateState()
         #expect(model.isFlashing == true)
-        #expect(model.minutesRemaining == 0)
+        #expect(model.minutesRemaining == 27)
     }
 
     @Test func stopsFlashingAfter5MinutesPastStart() {
@@ -139,7 +139,9 @@ struct CountdownModelTests {
             hasOtherAttendees: true
         )
         model.updateState()
-        #expect(model.shouldShowOverlay == false)
+        #expect(model.shouldShowOverlay == true)
+        #expect(model.isFlashing == false)
+        #expect(model.meetingRingProgress > 0.7)
     }
 
     @Test func clickDismissesCurrentEvent() {
@@ -187,14 +189,38 @@ struct CountdownModelTests {
         #expect(model.shouldShowOverlay == true)
     }
 
-    @Test func skipsEventPastDisplayWindow() {
+    @Test func showsInProgressMeetingOverUpcoming() {
         let model = CountdownModel()
         model.setEvents([
             CalendarEvent(
-                id: "past",
-                summary: "Old Meeting",
+                id: "current",
+                summary: "Current Meeting",
                 startTime: Date().addingTimeInterval(-10 * 60),
                 endTime: Date().addingTimeInterval(20 * 60),
+                hasOtherAttendees: true
+            ),
+            CalendarEvent(
+                id: "upcoming",
+                summary: "Next Meeting",
+                startTime: Date().addingTimeInterval(20 * 60),
+                endTime: Date().addingTimeInterval(50 * 60),
+                hasOtherAttendees: true
+            ),
+        ])
+        model.updateState()
+        #expect(model.nextEvent?.id == "current")
+        #expect(model.shouldShowOverlay == true)
+        #expect(model.meetingRingProgress > 0.5)
+    }
+
+    @Test func skipsEndedEventShowsUpcoming() {
+        let model = CountdownModel()
+        model.setEvents([
+            CalendarEvent(
+                id: "ended",
+                summary: "Old Meeting",
+                startTime: Date().addingTimeInterval(-60 * 60),
+                endTime: Date().addingTimeInterval(-10 * 60),
                 hasOtherAttendees: true
             ),
             CalendarEvent(
@@ -283,5 +309,109 @@ struct CountdownModelTests {
         )
         model.updateState()
         #expect(model.shouldShowOverlay == true)
+    }
+
+    // MARK: - Meeting ring progress
+
+    @Test func meetingRingProgressIsZeroBeforeMeetingStarts() {
+        let model = CountdownModel()
+        model.nextEvent = CalendarEvent(
+            id: "1",
+            summary: "Meeting",
+            startTime: Date().addingTimeInterval(30 * 60),
+            endTime: Date().addingTimeInterval(60 * 60),
+            hasOtherAttendees: true
+        )
+        model.updateState()
+        #expect(model.meetingRingProgress == 0.0)
+    }
+
+    @Test func meetingRingProgressAtMeetingMidpoint() {
+        let model = CountdownModel()
+        // 60-min meeting, 30 min in → 50% remaining
+        model.nextEvent = CalendarEvent(
+            id: "1",
+            summary: "Meeting",
+            startTime: Date().addingTimeInterval(-30 * 60),
+            endTime: Date().addingTimeInterval(30 * 60),
+            hasOtherAttendees: true
+        )
+        model.updateState()
+        #expect(model.meetingRingProgress > 0.45)
+        #expect(model.meetingRingProgress < 0.55)
+    }
+
+    @Test func meetingRingProgressNearStart() {
+        let model = CountdownModel()
+        // 60-min meeting, 1 min in → ~98% remaining
+        model.nextEvent = CalendarEvent(
+            id: "1",
+            summary: "Meeting",
+            startTime: Date().addingTimeInterval(-1 * 60),
+            endTime: Date().addingTimeInterval(59 * 60),
+            hasOtherAttendees: true
+        )
+        model.updateState()
+        #expect(model.meetingRingProgress > 0.95)
+    }
+
+    @Test func meetingRingProgressNearEnd() {
+        let model = CountdownModel()
+        // 60-min meeting, 58 min in → ~3% remaining
+        model.nextEvent = CalendarEvent(
+            id: "1",
+            summary: "Meeting",
+            startTime: Date().addingTimeInterval(-58 * 60),
+            endTime: Date().addingTimeInterval(2 * 60),
+            hasOtherAttendees: true
+        )
+        model.updateState()
+        #expect(model.meetingRingProgress < 0.05)
+        #expect(model.meetingRingProgress > 0.0)
+    }
+
+    @Test func meetingRingProgressIsZeroAfterMeetingEnds() {
+        let model = CountdownModel()
+        model.alwaysShowCircle = false
+        model.nextEvent = CalendarEvent(
+            id: "1",
+            summary: "Meeting",
+            startTime: Date().addingTimeInterval(-60 * 60),
+            endTime: Date().addingTimeInterval(-1 * 60),
+            hasOtherAttendees: true
+        )
+        model.updateState()
+        #expect(model.meetingRingProgress == 0.0)
+        #expect(model.shouldShowOverlay == false)
+    }
+
+    @Test func minutesRemainingShowsMeetingTimeLeftDuringMeeting() {
+        let model = CountdownModel()
+        // 60-min meeting, 15 min in → 45 min remaining
+        model.nextEvent = CalendarEvent(
+            id: "1",
+            summary: "Meeting",
+            startTime: Date().addingTimeInterval(-15 * 60),
+            endTime: Date().addingTimeInterval(45 * 60),
+            hasOtherAttendees: true
+        )
+        model.updateState()
+        #expect(model.minutesRemaining == 45)
+    }
+
+    @Test func overlayVisibleDuringEntireMeeting() {
+        let model = CountdownModel()
+        model.alwaysShowCircle = false
+        // 60-min meeting, 30 min in
+        model.nextEvent = CalendarEvent(
+            id: "1",
+            summary: "Meeting",
+            startTime: Date().addingTimeInterval(-30 * 60),
+            endTime: Date().addingTimeInterval(30 * 60),
+            hasOtherAttendees: true
+        )
+        model.updateState()
+        #expect(model.shouldShowOverlay == true)
+        #expect(model.isFlashing == false)
     }
 }
