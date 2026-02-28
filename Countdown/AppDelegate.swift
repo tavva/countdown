@@ -39,6 +39,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         withObservationTracking {
             _ = calendarManager.model.shouldShowOverlay
             _ = calendarManager.model.showingEventDetails
+            _ = calendarManager.model.isIdle
         } onChange: { [weak self] in
             Task { @MainActor [weak self] in
                 self?.updatePanel()
@@ -87,7 +88,8 @@ struct OverlayContent: View {
                     CircleView(
                         minutesRemaining: manager.model.minutesRemaining,
                         colourProgress: manager.model.colourProgress,
-                        isFlashing: manager.model.isFlashing
+                        isFlashing: manager.model.isFlashing,
+                        isIdle: manager.model.isIdle
                     )
 
                     if manager.model.showingEventDetails, let event = manager.model.nextEvent {

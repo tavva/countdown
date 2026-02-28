@@ -12,10 +12,19 @@ final class CountdownModel {
         set { UserDefaults.standard.set(newValue, forKey: "meetingsOnly") }
     }
 
+    var alwaysShowCircle: Bool {
+        get {
+            if UserDefaults.standard.object(forKey: "alwaysShowCircle") == nil { return true }
+            return UserDefaults.standard.bool(forKey: "alwaysShowCircle")
+        }
+        set { UserDefaults.standard.set(newValue, forKey: "alwaysShowCircle") }
+    }
+
     private(set) var shouldShowOverlay: Bool = false
     private(set) var minutesRemaining: Int = 0
     private(set) var colourProgress: Double = 0.0  // 0 = green (60 min), 1 = red (0 min)
     private(set) var isFlashing: Bool = false
+    private(set) var isIdle: Bool = false
     private(set) var showingEventDetails: Bool = false
 
     private var dismissedEventID: String?
@@ -34,17 +43,17 @@ final class CountdownModel {
 
     func updateState() {
         guard let event = nextEvent else {
-            shouldShowOverlay = false
+            setIdleOrHidden()
             return
         }
 
         if meetingsOnly && !event.hasOtherAttendees {
-            shouldShowOverlay = false
+            setIdleOrHidden()
             return
         }
 
         if event.id == dismissedEventID {
-            shouldShowOverlay = false
+            setIdleOrHidden()
             return
         }
 
@@ -52,16 +61,17 @@ final class CountdownModel {
         let minutesUntil = secondsUntilStart / 60.0
 
         if minutesUntil > 60 {
-            shouldShowOverlay = false
+            setIdleOrHidden()
             return
         }
 
         if minutesUntil < -5 {
-            shouldShowOverlay = false
+            setIdleOrHidden()
             return
         }
 
         shouldShowOverlay = true
+        isIdle = false
         minutesRemaining = max(0, Int(ceil(minutesUntil)))
 
         if minutesUntil > 0 {
@@ -72,6 +82,17 @@ final class CountdownModel {
         colourProgress = min(1.0, max(0.0, colourProgress))
 
         isFlashing = minutesUntil < 1 && minutesUntil >= -5
+    }
+
+    private func setIdleOrHidden() {
+        if alwaysShowCircle {
+            shouldShowOverlay = true
+            isIdle = true
+            isFlashing = false
+        } else {
+            shouldShowOverlay = false
+            isIdle = false
+        }
     }
 
     func dismiss() {

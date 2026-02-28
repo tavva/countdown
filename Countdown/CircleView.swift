@@ -7,10 +7,14 @@ struct CircleView: View {
     let minutesRemaining: Int
     let colourProgress: Double  // 0 = green, 1 = red
     let isFlashing: Bool
+    let isIdle: Bool
 
     @State private var flashOpacity: Double = 1.0
 
     private var circleColour: Color {
+        if isIdle {
+            return Color(white: 0.5)
+        }
         if colourProgress > 55.0 / 60.0 {
             return .red
         }
@@ -29,9 +33,11 @@ struct CircleView: View {
                 .opacity(isFlashing ? flashOpacity : 0.85)
                 .frame(width: 80, height: 80)
 
-            Text("\(minutesRemaining)")
-                .font(.system(size: 32, weight: .bold, design: .rounded))
-                .foregroundStyle(.white)
+            if !isIdle {
+                Text("\(minutesRemaining)")
+                    .font(.system(size: 32, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white)
+            }
         }
         .onChange(of: isFlashing) { _, flashing in
             if flashing {

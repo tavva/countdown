@@ -7,9 +7,58 @@ import Foundation
 
 @Suite("CountdownModel", .serialized)
 struct CountdownModelTests {
-    @Test func noEventMeansHidden() {
+    @Test func noEventShowsIdleWhenAlwaysShowCircle() {
         let model = CountdownModel()
+        model.alwaysShowCircle = true
+        model.updateState()
+        #expect(model.shouldShowOverlay == true)
+        #expect(model.isIdle == true)
+        #expect(model.isFlashing == false)
+    }
+
+    @Test func noEventHiddenWhenNotAlwaysShowCircle() {
+        let model = CountdownModel()
+        model.alwaysShowCircle = false
+        model.updateState()
         #expect(model.shouldShowOverlay == false)
+        #expect(model.isIdle == false)
+    }
+
+    @Test func eventWithinWindowClearsIdleState() {
+        let model = CountdownModel()
+        model.alwaysShowCircle = true
+        model.nextEvent = CalendarEvent(
+            id: "1",
+            summary: "Standup",
+            startTime: Date().addingTimeInterval(30 * 60),
+            endTime: Date().addingTimeInterval(60 * 60),
+            hasOtherAttendees: true
+        )
+        model.updateState()
+        #expect(model.shouldShowOverlay == true)
+        #expect(model.isIdle == false)
+    }
+
+    @Test func filteredEventShowsIdleWhenAlwaysShowCircle() {
+        let model = CountdownModel()
+        model.alwaysShowCircle = true
+        model.meetingsOnly = true
+        model.nextEvent = CalendarEvent(
+            id: "1",
+            summary: "Focus Time",
+            startTime: Date().addingTimeInterval(30 * 60),
+            endTime: Date().addingTimeInterval(60 * 60),
+            hasOtherAttendees: false
+        )
+        model.updateState()
+        #expect(model.shouldShowOverlay == true)
+        #expect(model.isIdle == true)
+    }
+
+    @Test func alwaysShowCircleDefaultsToTrue() {
+        UserDefaults.standard.removeObject(forKey: "alwaysShowCircle")
+        let model = CountdownModel()
+        #expect(model.alwaysShowCircle == true)
     }
 
     @Test func eventWithin60MinutesShowsOverlay() {
@@ -81,6 +130,7 @@ struct CountdownModelTests {
 
     @Test func stopsFlashingAfter5MinutesPastStart() {
         let model = CountdownModel()
+        model.alwaysShowCircle = false
         model.nextEvent = CalendarEvent(
             id: "1",
             summary: "Meeting",
@@ -110,6 +160,7 @@ struct CountdownModelTests {
 
     @Test func meetingsOnlyFilterExcludesSoloEvents() {
         let model = CountdownModel()
+        model.alwaysShowCircle = false
         model.meetingsOnly = true
         model.nextEvent = CalendarEvent(
             id: "1",
