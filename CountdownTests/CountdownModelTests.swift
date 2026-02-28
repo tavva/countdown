@@ -59,6 +59,43 @@ struct CountdownModelTests {
         #expect(model.isIdle == true)
     }
 
+    @Test func displayedEventIsNilWhenFilteredByMeetingsOnly() {
+        let model = CountdownModel()
+        model.alwaysShowCircle = true
+        model.meetingsOnly = true
+        model.nextEvent = CalendarEvent(
+            id: "1",
+            summary: "Focus Time",
+            startTime: Date().addingTimeInterval(30 * 60),
+            endTime: Date().addingTimeInterval(60 * 60),
+            hasOtherAttendees: false
+        )
+        model.updateState()
+        #expect(model.isIdle == true)
+        #expect(model.displayedEvent == nil)
+    }
+
+    @Test func displayedEventIsSetForActiveEvent() {
+        let model = CountdownModel()
+        model.nextEvent = CalendarEvent(
+            id: "1",
+            summary: "Standup",
+            startTime: Date().addingTimeInterval(30 * 60),
+            endTime: Date().addingTimeInterval(60 * 60),
+            hasOtherAttendees: true
+        )
+        model.updateState()
+        #expect(model.isIdle == false)
+        #expect(model.displayedEvent?.id == "1")
+    }
+
+    @Test func displayedEventIsNilWhenNoEvents() {
+        let model = CountdownModel()
+        model.alwaysShowCircle = true
+        model.updateState()
+        #expect(model.displayedEvent == nil)
+    }
+
     @Test func alwaysShowCircleDefaultsToTrue() {
         UserDefaults.standard.removeObject(forKey: "alwaysShowCircle")
         let model = CountdownModel()

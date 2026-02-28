@@ -105,7 +105,7 @@ struct OverlayContent: View {
                         ringProgress: manager.model.ringProgress
                     )
 
-                    if manager.model.showingEventDetails, let event = manager.model.nextEvent {
+                    if manager.model.showingEventDetails, let event = manager.model.displayedEvent {
                         VStack(spacing: 2) {
                             Text(event.summary)
                                 .font(.system(size: 12, weight: .semibold))
