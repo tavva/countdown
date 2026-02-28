@@ -25,7 +25,7 @@ final class CountdownModel {
     private(set) var colourProgress: Double = 0.0  // 0 = green (60 min), 1 = red (0 min)
     private(set) var isFlashing: Bool = false
     private(set) var isIdle: Bool = false
-    private(set) var meetingRingProgress: Double = 0.0  // 0 = no ring, 1 = full ring
+    private(set) var ringProgress: Double = 0.0  // 0 = no ring, 1 = full ring
     var showingEventDetails: Bool {
         get {
             if UserDefaults.standard.object(forKey: "showingEventDetails") == nil { return true }
@@ -37,7 +37,7 @@ final class CountdownModel {
     private var dismissedEventID: String?
 
     func setEvents(_ events: [CalendarEvent]) {
-        nextEvent = events.first { $0.endTime.timeIntervalSinceNow > 0 }
+        nextEvent = events.first { $0.startTime.timeIntervalSinceNow >= -5 * 60 }
     }
 
     func toggleEventDetails() {
@@ -62,39 +62,34 @@ final class CountdownModel {
 
         let secondsUntilStart = event.startTime.timeIntervalSinceNow
         let minutesUntil = secondsUntilStart / 60.0
-        let secondsUntilEnd = event.endTime.timeIntervalSinceNow
 
         if minutesUntil > 60 {
             setIdleOrHidden()
             return
         }
 
-        if secondsUntilEnd <= 0 {
+        if minutesUntil < -5 {
             setIdleOrHidden()
             return
         }
 
         shouldShowOverlay = true
         isIdle = false
+        minutesRemaining = max(0, Int(ceil(minutesUntil)))
+        ringProgress = max(0.0, minutesUntil / 60.0)
 
-        if minutesUntil <= 0 {
-            // Meeting in progress — show remaining time and ring
-            let totalDuration = event.endTime.timeIntervalSince(event.startTime)
-            meetingRingProgress = totalDuration > 0 ? secondsUntilEnd / totalDuration : 0
-            minutesRemaining = Int(ceil(secondsUntilEnd / 60.0))
-            colourProgress = 1.0
-            isFlashing = minutesUntil >= -5
+        if minutesUntil > 0 {
+            colourProgress = 1.0 - (minutesUntil / 60.0)
         } else {
-            // Counting down to meeting start
-            meetingRingProgress = 0
-            minutesRemaining = Int(ceil(minutesUntil))
-            colourProgress = min(1.0, max(0.0, 1.0 - (minutesUntil / 60.0)))
-            isFlashing = minutesUntil < 1
+            colourProgress = 1.0
         }
+        colourProgress = min(1.0, max(0.0, colourProgress))
+
+        isFlashing = minutesUntil < 1 && minutesUntil >= -5
     }
 
     private func setIdleOrHidden() {
-        meetingRingProgress = 0
+        ringProgress = 0
         if alwaysShowCircle {
             shouldShowOverlay = true
             isIdle = true

@@ -9,6 +9,7 @@ import Foundation
 struct CalendarManagerTests {
     @Test @MainActor func setMeetingsOnlyUpdatesOverlayImmediately() {
         let manager = CalendarManager()
+        manager.model.alwaysShowCircle = false
         manager.model.meetingsOnly = false
         manager.model.nextEvent = CalendarEvent(
             id: "1",
@@ -28,6 +29,7 @@ struct CalendarManagerTests {
 
     @Test @MainActor func setMeetingsOnlyToFalseShowsSoloEvents() {
         let manager = CalendarManager()
+        manager.model.alwaysShowCircle = false
         manager.model.meetingsOnly = true
         manager.model.nextEvent = CalendarEvent(
             id: "1",
