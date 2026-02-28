@@ -24,6 +24,7 @@ enum OverlayPosition {
 
 final class OverlayPanel: NSPanel {
     var onTap: (() -> Void)?
+    var onPositionChange: (() -> Void)?
 
     private var initialMouseLocation: CGPoint = .zero
     private var initialWindowOrigin: CGPoint = .zero
@@ -78,12 +79,14 @@ final class OverlayPanel: NSPanel {
                 x: initialWindowOrigin.x + dx,
                 y: initialWindowOrigin.y + dy
             ))
+            onPositionChange?()
         }
     }
 
     override func mouseUp(with event: NSEvent) {
         if didDrag {
             OverlayPosition.save(frame.origin)
+            onPositionChange?()
         } else {
             onTap?()
         }

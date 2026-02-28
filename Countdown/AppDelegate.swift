@@ -13,6 +13,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }()
 
     var overlayPanel: OverlayPanel?
+    private var panelTopEdge: CGFloat = 0
+    private var panelX: CGFloat = 0
 
     func applicationWillFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.prohibited)
@@ -26,7 +28,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         panel.onTap = { [weak self] in
             self?.calendarManager.model.toggleEventDetails()
         }
+        panel.onPositionChange = { [weak self] in
+            guard let self, let panel = self.overlayPanel else { return }
+            self.panelTopEdge = panel.frame.origin.y + panel.frame.height
+            self.panelX = panel.frame.origin.x
+        }
         self.overlayPanel = panel
+        panelTopEdge = panel.frame.origin.y + panel.frame.height
+        panelX = panel.frame.origin.x
 
         if calendarManager.isSignedIn {
             calendarManager.startPolling()
@@ -52,18 +61,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard let panel = overlayPanel else { return }
 
         if calendarManager.model.shouldShowOverlay {
-            panel.ignoresMouseEvents = false
-
             let height: CGFloat = calendarManager.model.showingEventDetails ? 150 : 100
             let width: CGFloat = 200
-            let topEdge = panel.frame.origin.y + panel.frame.height
             panel.setFrame(NSRect(
-                x: panel.frame.origin.x,
-                y: topEdge - height,
+                x: panelX,
+                y: panelTopEdge - height,
                 width: width,
                 height: height
             ), display: true)
 
+            panel.ignoresMouseEvents = false
             panel.orderFront(nil)
         } else {
             panel.ignoresMouseEvents = true
