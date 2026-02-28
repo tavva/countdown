@@ -210,31 +210,36 @@ struct CountdownModelTests {
         #expect(model.shouldShowOverlay == true)
     }
 
-    @Test func eventDetailsShownByDefault() {
+    @Test func showingEventDetailsDefaultsToTrue() {
+        UserDefaults.standard.removeObject(forKey: "showingEventDetails")
         let model = CountdownModel()
         #expect(model.showingEventDetails == true)
     }
 
-    @Test func toggleEventDetailsFlipsState() {
+    @Test func toggleEventDetailsPersists() {
         let model = CountdownModel()
-        #expect(model.showingEventDetails == true)
+        model.showingEventDetails = true
         model.toggleEventDetails()
         #expect(model.showingEventDetails == false)
-        model.toggleEventDetails()
-        #expect(model.showingEventDetails == true)
+
+        let model2 = CountdownModel()
+        #expect(model2.showingEventDetails == false)
+
+        model2.toggleEventDetails()
+        #expect(model2.showingEventDetails == true)
     }
 
-    @Test func eventDetailsResetWhenEventChanges() {
+    @Test func showingEventDetailsSurvivesEventChange() {
         let model = CountdownModel()
-        model.nextEvent = CalendarEvent(
+        model.showingEventDetails = false
+
+        model.setEvents([CalendarEvent(
             id: "1",
             summary: "Meeting",
             startTime: Date().addingTimeInterval(30 * 60),
             endTime: Date().addingTimeInterval(60 * 60),
             hasOtherAttendees: true
-        )
-        model.updateState()
-        model.toggleEventDetails()
+        )])
         #expect(model.showingEventDetails == false)
 
         model.setEvents([CalendarEvent(
@@ -244,11 +249,15 @@ struct CountdownModelTests {
             endTime: Date().addingTimeInterval(50 * 60),
             hasOtherAttendees: true
         )])
-        #expect(model.showingEventDetails == true)
+        #expect(model.showingEventDetails == false)
+
+        // Restore default
+        model.showingEventDetails = true
     }
 
-    @Test func eventDetailsHiddenWhenDismissed() {
+    @Test func showingEventDetailsSurvivesDismiss() {
         let model = CountdownModel()
+        model.showingEventDetails = true
         model.nextEvent = CalendarEvent(
             id: "1",
             summary: "Meeting",
@@ -257,10 +266,9 @@ struct CountdownModelTests {
             hasOtherAttendees: true
         )
         model.updateState()
-        #expect(model.showingEventDetails == true)
 
         model.dismiss()
-        #expect(model.showingEventDetails == false)
+        #expect(model.showingEventDetails == true)
     }
 
     @Test func allEventsShowsSoloEvents() {

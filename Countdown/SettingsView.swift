@@ -52,6 +52,13 @@ struct SettingsView: View {
         )
     }
 
+    private var showEventDetailsBinding: Binding<Bool> {
+        Binding(
+            get: { manager.model.showingEventDetails },
+            set: { manager.model.showingEventDetails = $0 }
+        )
+    }
+
     @ViewBuilder
     private var statusSection: some View {
         if let event = manager.model.nextEvent {
@@ -125,6 +132,17 @@ struct SettingsView: View {
             Picker("", selection: alwaysShowCircleBinding) {
                 Text("Always").tag(true)
                 Text("Only before events").tag(false)
+            }
+            .pickerStyle(.segmented)
+
+            Text("Event details")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .padding(.top, 4)
+
+            Picker("", selection: showEventDetailsBinding) {
+                Text("Show").tag(true)
+                Text("Hide").tag(false)
             }
             .pickerStyle(.segmented)
         }

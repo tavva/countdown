@@ -25,16 +25,18 @@ final class CountdownModel {
     private(set) var colourProgress: Double = 0.0  // 0 = green (60 min), 1 = red (0 min)
     private(set) var isFlashing: Bool = false
     private(set) var isIdle: Bool = false
-    private(set) var showingEventDetails: Bool = true
+    var showingEventDetails: Bool {
+        get {
+            if UserDefaults.standard.object(forKey: "showingEventDetails") == nil { return true }
+            return UserDefaults.standard.bool(forKey: "showingEventDetails")
+        }
+        set { UserDefaults.standard.set(newValue, forKey: "showingEventDetails") }
+    }
 
     private var dismissedEventID: String?
 
     func setEvents(_ events: [CalendarEvent]) {
-        let newEvent = events.first { $0.startTime.timeIntervalSinceNow >= -5 * 60 }
-        if newEvent?.id != nextEvent?.id {
-            showingEventDetails = true
-        }
-        nextEvent = newEvent
+        nextEvent = events.first { $0.startTime.timeIntervalSinceNow >= -5 * 60 }
     }
 
     func toggleEventDetails() {
@@ -99,6 +101,5 @@ final class CountdownModel {
         dismissedEventID = nextEvent?.id
         shouldShowOverlay = false
         isFlashing = false
-        showingEventDetails = false
     }
 }
