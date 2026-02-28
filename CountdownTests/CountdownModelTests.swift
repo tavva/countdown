@@ -210,13 +210,18 @@ struct CountdownModelTests {
         #expect(model.shouldShowOverlay == true)
     }
 
+    @Test func eventDetailsShownByDefault() {
+        let model = CountdownModel()
+        #expect(model.showingEventDetails == true)
+    }
+
     @Test func toggleEventDetailsFlipsState() {
         let model = CountdownModel()
-        #expect(model.showingEventDetails == false)
-        model.toggleEventDetails()
         #expect(model.showingEventDetails == true)
         model.toggleEventDetails()
         #expect(model.showingEventDetails == false)
+        model.toggleEventDetails()
+        #expect(model.showingEventDetails == true)
     }
 
     @Test func eventDetailsResetWhenEventChanges() {
@@ -230,7 +235,7 @@ struct CountdownModelTests {
         )
         model.updateState()
         model.toggleEventDetails()
-        #expect(model.showingEventDetails == true)
+        #expect(model.showingEventDetails == false)
 
         model.setEvents([CalendarEvent(
             id: "2",
@@ -239,10 +244,10 @@ struct CountdownModelTests {
             endTime: Date().addingTimeInterval(50 * 60),
             hasOtherAttendees: true
         )])
-        #expect(model.showingEventDetails == false)
+        #expect(model.showingEventDetails == true)
     }
 
-    @Test func eventDetailsResetWhenDismissed() {
+    @Test func eventDetailsHiddenWhenDismissed() {
         let model = CountdownModel()
         model.nextEvent = CalendarEvent(
             id: "1",
@@ -252,7 +257,6 @@ struct CountdownModelTests {
             hasOtherAttendees: true
         )
         model.updateState()
-        model.toggleEventDetails()
         #expect(model.showingEventDetails == true)
 
         model.dismiss()

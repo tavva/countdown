@@ -25,14 +25,14 @@ final class CountdownModel {
     private(set) var colourProgress: Double = 0.0  // 0 = green (60 min), 1 = red (0 min)
     private(set) var isFlashing: Bool = false
     private(set) var isIdle: Bool = false
-    private(set) var showingEventDetails: Bool = false
+    private(set) var showingEventDetails: Bool = true
 
     private var dismissedEventID: String?
 
     func setEvents(_ events: [CalendarEvent]) {
         let newEvent = events.first { $0.startTime.timeIntervalSinceNow >= -5 * 60 }
         if newEvent?.id != nextEvent?.id {
-            showingEventDetails = false
+            showingEventDetails = true
         }
         nextEvent = newEvent
     }
