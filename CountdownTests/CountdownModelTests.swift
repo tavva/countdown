@@ -116,6 +116,20 @@ struct CountdownModelTests {
         #expect(model.minutesRemaining == 30)
     }
 
+    @Test func colourProgressCurvesGreenLonger() {
+        let model = CountdownModel()
+        model.nextEvent = CalendarEvent(
+            id: "1",
+            summary: "Meeting",
+            startTime: Date().addingTimeInterval(30 * 60),
+            endTime: Date().addingTimeInterval(60 * 60),
+            hasOtherAttendees: true
+        )
+        model.updateState()
+        // At 30 min (halfway), progress should be well below 0.5 due to curve
+        #expect(model.colourProgress < 0.3)
+    }
+
     @Test func colourIsGreenAt60Minutes() {
         let model = CountdownModel()
         model.nextEvent = CalendarEvent(

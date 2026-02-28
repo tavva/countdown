@@ -86,7 +86,8 @@ final class CountdownModel {
         ringProgress = max(0.0, minutesUntil / 60.0)
 
         if minutesUntil > 0 {
-            colourProgress = 1.0 - (minutesUntil / 60.0)
+            let linear = 1.0 - (minutesUntil / 60.0)
+            colourProgress = pow(linear, 2)
         } else {
             colourProgress = 1.0
         }
