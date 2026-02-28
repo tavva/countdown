@@ -10,7 +10,7 @@ struct CircleView: View {
     let isIdle: Bool
     let ringProgress: Double  // 0 = no ring, 1 = full ring
 
-    @State private var flashOpacity: Double = 1.0
+    @State private var flashOpacity: Double = 0.85
 
     private var circleColour: Color {
         if isIdle {
@@ -31,7 +31,7 @@ struct CircleView: View {
         ZStack {
             Circle()
                 .fill(circleColour)
-                .opacity(isFlashing ? flashOpacity : 0.85)
+                .opacity(flashOpacity)
                 .frame(width: 80, height: 80)
 
             if ringProgress > 0 {
@@ -53,7 +53,7 @@ struct CircleView: View {
             if flashing {
                 startFlashing()
             } else {
-                flashOpacity = 1.0
+                stopFlashing()
             }
         }
         .onAppear {
@@ -64,8 +64,15 @@ struct CircleView: View {
     }
 
     private func startFlashing() {
+        flashOpacity = 1.0
         withAnimation(.easeInOut(duration: 0.5).repeatForever(autoreverses: true)) {
             flashOpacity = 0.4
+        }
+    }
+
+    private func stopFlashing() {
+        withAnimation(.default) {
+            flashOpacity = 0.85
         }
     }
 }
