@@ -22,6 +22,7 @@ targets:
       INFOPLIST_FILE: Countdown/Info.plist
       PRODUCT_BUNDLE_IDENTIFIER: com.countdown.app
       PRODUCT_NAME: Countdown
+      ENABLE_HARDENED_RUNTIME: YES
     entitlements:
       path: Countdown/Countdown.entitlements
       properties:
