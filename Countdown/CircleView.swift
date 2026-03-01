@@ -33,6 +33,7 @@ struct CircleView: View {
                 .fill(circleColour)
                 .opacity(flashOpacity)
                 .frame(width: 80, height: 80)
+                .shadow(color: .black.opacity(0.3), radius: 10)
 
             if ringProgress > 0 {
                 Circle()
