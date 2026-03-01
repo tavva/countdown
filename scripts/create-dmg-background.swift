@@ -1,6 +1,6 @@
 #!/usr/bin/env swift
 // ABOUTME: Generates the background image for the DMG installer.
-// ABOUTME: Creates a dark background with a drag-to-install arrow between icon positions.
+// ABOUTME: Creates a light background with a drag-to-install arrow between icon positions.
 
 import AppKit
 
@@ -23,9 +23,9 @@ let rep = NSBitmapImageRep(
 NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: rep)!
 let cg = NSGraphicsContext.current!.cgContext
 
-// Background — subtle vertical gradient
-let topColor = CGColor(srgbRed: 0.16, green: 0.16, blue: 0.17, alpha: 1.0)
-let bottomColor = CGColor(srgbRed: 0.11, green: 0.11, blue: 0.12, alpha: 1.0)
+// Background — subtle vertical gradient, light enough for readable labels in both appearances
+let topColor = CGColor(srgbRed: 0.93, green: 0.93, blue: 0.94, alpha: 1.0)
+let bottomColor = CGColor(srgbRed: 0.86, green: 0.86, blue: 0.87, alpha: 1.0)
 let gradient = CGGradient(
     colorsSpace: CGColorSpaceCreateDeviceRGB(),
     colors: [topColor, bottomColor] as CFArray,
@@ -45,22 +45,24 @@ let arrowY: CGFloat = 210
 let startX: CGFloat = 250
 let endX: CGFloat = 415
 
-let arrowColor = CGColor(srgbRed: 1, green: 1, blue: 1, alpha: 0.45)
+let arrowColor = CGColor(srgbRed: 0.55, green: 0.55, blue: 0.58, alpha: 1.0)
 cg.setStrokeColor(arrowColor)
-cg.setLineWidth(4)
+cg.setFillColor(arrowColor)
+cg.setLineWidth(3)
 cg.setLineCap(.round)
 cg.setLineJoin(.round)
 
 // Shaft
 cg.move(to: CGPoint(x: startX, y: arrowY))
-cg.addLine(to: CGPoint(x: endX - 18, y: arrowY))
+cg.addLine(to: CGPoint(x: endX - 14, y: arrowY))
 cg.strokePath()
 
-// Arrowhead (chevron)
-cg.move(to: CGPoint(x: endX - 30, y: arrowY + 16))
+// Filled arrowhead
+cg.move(to: CGPoint(x: endX - 20, y: arrowY + 12))
 cg.addLine(to: CGPoint(x: endX, y: arrowY))
-cg.addLine(to: CGPoint(x: endX - 30, y: arrowY - 16))
-cg.strokePath()
+cg.addLine(to: CGPoint(x: endX - 20, y: arrowY - 12))
+cg.closePath()
+cg.fillPath()
 
 NSGraphicsContext.current = nil
 
