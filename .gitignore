@@ -5,6 +5,7 @@ xcuserdata/
 # Build artifacts
 DerivedData/
 build/
+*.profraw
 
 # macOS metadata
 .DS_Store
