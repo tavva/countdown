@@ -14,7 +14,11 @@
   <img src="https://img.shields.io/badge/licence-MIT-green" alt="Licence">
 </p>
 
-<!-- TODO: Add a screenshot or GIF of the app in action -->
+<p align="center">
+  <img src="docs/meeting_1.png" width="220" alt="Green countdown circle showing 38 minutes until meeting">
+  &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="docs/meeting_2.png" width="220" alt="Red countdown circle showing 6 minutes until meeting">
+</p>
 
 ## Features
 
