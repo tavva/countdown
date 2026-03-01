@@ -23,6 +23,7 @@ targets:
       PRODUCT_BUNDLE_IDENTIFIER: com.countdown.app
       PRODUCT_NAME: Countdown
       ENABLE_HARDENED_RUNTIME: YES
+      ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
     entitlements:
       path: Countdown/Countdown.entitlements
       properties:
