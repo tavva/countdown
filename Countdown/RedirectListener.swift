@@ -2,7 +2,7 @@
 // ABOUTME: Extracts the authorisation code from the browser redirect and sends a success page.
 
 import Foundation
-import Network
+@preconcurrency import Network
 
 /// Thread-safe one-shot flag to prevent resuming a continuation twice.
 private final class ContinuationGuard: @unchecked Sendable {
@@ -31,7 +31,9 @@ final class RedirectListener: @unchecked Sendable {
     private var pendingConnection: NWConnection?
 
     init() async throws {
-        let nwListener = try NWListener(using: .tcp, on: .any)
+        let params = NWParameters.tcp
+        params.requiredLocalEndpoint = NWEndpoint.hostPort(host: .ipv4(.loopback), port: .any)
+        let nwListener = try NWListener(using: params)
         self.listener = nwListener
 
         // NWListener requires newConnectionHandler before start()
