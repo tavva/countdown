@@ -1,6 +1,7 @@
 // ABOUTME: Menu bar popover showing event status, Google account controls, and event filter.
 // ABOUTME: Provides connect/disconnect for Google Calendar, a meetings-only toggle, and calendar selection.
 
+import ServiceManagement
 import SwiftUI
 
 struct SettingsView: View {
@@ -22,6 +23,11 @@ struct SettingsView: View {
                 Divider()
                 calendarsSection
             }
+
+            Divider()
+
+            Toggle("Launch at login", isOn: launchAtLoginBinding)
+                .toggleStyle(.switch)
 
             Spacer()
 
@@ -49,6 +55,23 @@ struct SettingsView: View {
         Binding(
             get: { manager.model.alwaysShowCircle },
             set: { manager.setAlwaysShowCircle($0) }
+        )
+    }
+
+    private var launchAtLoginBinding: Binding<Bool> {
+        Binding(
+            get: { SMAppService.mainApp.status == .enabled },
+            set: { enabled in
+                do {
+                    if enabled {
+                        try SMAppService.mainApp.register()
+                    } else {
+                        try SMAppService.mainApp.unregister()
+                    }
+                } catch {
+                    // Registration can fail if user denied in System Settings
+                }
+            }
         )
     }
 
