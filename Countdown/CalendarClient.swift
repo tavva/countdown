@@ -24,8 +24,9 @@ final class CalendarClient: Sendable {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime]
 
+        let encodedID = calendarID.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? calendarID
         var components = URLComponents(
-            string: "https://www.googleapis.com/calendar/v3/calendars/\(calendarID)/events"
+            string: "https://www.googleapis.com/calendar/v3/calendars/\(encodedID)/events"
         )!
         components.queryItems = [
             URLQueryItem(name: "timeMin", value: formatter.string(from: start)),

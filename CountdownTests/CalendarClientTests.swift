@@ -177,6 +177,29 @@ struct CalendarClientTests {
         #expect(capturedURL!.path.contains("/calendars/work@example.com/events"))
     }
 
+    @Test func fetchEventsEncodesCalendarIDWithHash() async throws {
+        nonisolated(unsafe) var capturedURL: URL?
+        await MockURLProtocol.requestHandler.set(forHost: "www.googleapis.com") { request in
+            capturedURL = request.url
+            let response = HTTPURLResponse(
+                url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil
+            )!
+            return (response, Data(#"{"items":[]}"#.utf8))
+        }
+
+        let client = CalendarClient(session: session)
+        _ = try await client.fetchEvents(
+            accessToken: "test",
+            calendarID: "en.uk#holiday@group.v.calendar.google.com",
+            from: Date(),
+            to: Date().addingTimeInterval(3600)
+        )
+
+        let urlString = capturedURL!.absoluteString
+        #expect(urlString.contains("en.uk%23holiday"))
+        #expect(capturedURL!.query != nil)
+    }
+
     @Test func fetchCalendarsParsesResponse() async throws {
         let json = """
         {
