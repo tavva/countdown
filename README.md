@@ -5,7 +5,10 @@
 <h1 align="center">Countdown</h1>
 
 <p align="center">
-  A macOS menu bar app that floats a countdown circle on your screen showing minutes until your next Google Calendar event. The circle shifts from green to orange to red as the event approaches, and pulses when it's about to start — so you never lose track of time.
+  Never lose track of time.
+</p>
+<p align="center">
+  A macOS menu bar app that floats a countdown circle on your screen showing minutes until your next Google Calendar event. The circle shifts from green to orange to red as the event approaches, and pulses when it's about to start.
 </p>
 
 <p align="center">
