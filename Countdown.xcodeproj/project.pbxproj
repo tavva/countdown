@@ -34,6 +34,7 @@
 		E975249DE1F850E94AB2E371 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AE0899F7EBADCD899D9ED8B /* AppDelegate.swift */; };
 		EFB158280CDBE8C298C11BFC /* GoogleAuthTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F470913C55A73340956E201 /* GoogleAuthTests.swift */; };
 		F6C53A5A7E97A036401B8751 /* CountdownApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B915F61511E002C554FDADC /* CountdownApp.swift */; };
+		FB4666422C9F3CFABD87473F /* CircleHitTestViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05FA3E633BD58BBB4DA51F33 /* CircleHitTestViewTests.swift */; };
 		FF9C477A9BC0816D91307A7C /* CalendarClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 340AE2F6D23DF54BB8350652 /* CalendarClient.swift */; };
 /* End PBXBuildFile section */
 
@@ -48,6 +49,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		05FA3E633BD58BBB4DA51F33 /* CircleHitTestViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CircleHitTestViewTests.swift; sourceTree = "<group>"; };
 		11F8974166F1B12ECFD9F7F8 /* Config.plist.template */ = {isa = PBXFileReference; path = Config.plist.template; sourceTree = "<group>"; };
 		161DC129FE8C65823060677D /* Countdown.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Countdown.entitlements; sourceTree = "<group>"; };
 		1B915F61511E002C554FDADC /* CountdownApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CountdownApp.swift; sourceTree = "<group>"; };
@@ -88,6 +90,7 @@
 			children = (
 				F0AEC5FD2D7555FDDD7B4F7D /* CalendarClientTests.swift */,
 				9B2BA318ACDCF8C33C0D9EB5 /* CalendarManagerTests.swift */,
+				05FA3E633BD58BBB4DA51F33 /* CircleHitTestViewTests.swift */,
 				BE2B7F4112F14648B7DC7FC1 /* ConfigTests.swift */,
 				7B47B6164E2090CC918E63CA /* CountdownModelTests.swift */,
 				BCAD7B96A8F665B3C4198BFE /* CountdownTests.swift */,
@@ -233,6 +236,7 @@
 			files = (
 				7E83777B8ACD045FB6F71D6A /* CalendarClientTests.swift in Sources */,
 				760E2E49FDC280025C18DCF8 /* CalendarManagerTests.swift in Sources */,
+				FB4666422C9F3CFABD87473F /* CircleHitTestViewTests.swift in Sources */,
 				D676ECABA4C15FEBEA004AEF /* ConfigTests.swift in Sources */,
 				BE9CE7D70C8C2256AE0B5791 /* CountdownModelTests.swift in Sources */,
 				7FD80FA4DD8746A7FC2DE288 /* CountdownTests.swift in Sources */,

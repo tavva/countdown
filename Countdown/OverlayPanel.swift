@@ -27,6 +27,25 @@ enum OverlayPosition {
     }
 }
 
+enum CircleHitTest {
+    static let radius: CGFloat = 45
+    static let centreOffsetFromTop: CGFloat = 60
+
+    static func isInsideCircle(point: CGPoint, viewSize: CGSize) -> Bool {
+        let centreX = viewSize.width / 2.0
+        let centreY = viewSize.height - centreOffsetFromTop
+        let distance = hypot(point.x - centreX, point.y - centreY)
+        return distance <= radius
+    }
+}
+
+class CircleHitTestView: NSView {
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        guard CircleHitTest.isInsideCircle(point: point, viewSize: bounds.size) else { return nil }
+        return super.hitTest(point)
+    }
+}
+
 final class OverlayPanel: NSPanel {
     var onTap: (() -> Void)?
     var onPositionChange: (() -> Void)?
@@ -34,7 +53,6 @@ final class OverlayPanel: NSPanel {
     private var initialMouseLocation: CGPoint = .zero
     private var initialWindowOrigin: CGPoint = .zero
     private var didDrag = false
-    private var isTrackingMouse = false
 
     init<Content: View>(content: Content) {
         super.init(
@@ -56,7 +74,12 @@ final class OverlayPanel: NSPanel {
         hostingView.wantsLayer = true
         hostingView.layer?.isOpaque = false
         hostingView.layer?.backgroundColor = nil
-        contentView = hostingView
+
+        let container = CircleHitTestView(frame: NSRect(x: 0, y: 0, width: 200, height: 120))
+        hostingView.frame = container.bounds
+        hostingView.autoresizingMask = [.width, .height]
+        container.addSubview(hostingView)
+        contentView = container
 
         if let saved = OverlayPosition.restore() {
             setFrameOrigin(saved)
@@ -67,26 +90,6 @@ final class OverlayPanel: NSPanel {
 
     override var canBecomeKey: Bool { false }
     override var canBecomeMain: Bool { false }
-
-    override func sendEvent(_ event: NSEvent) {
-        switch event.type {
-        case .leftMouseDown, .rightMouseDown, .otherMouseDown:
-            let location = event.locationInWindow
-            let centerX = frame.width / 2.0
-            let centerY = frame.height - 60.0
-            let distance = hypot(location.x - centerX, location.y - centerY)
-            guard distance <= 45 else { return }
-            isTrackingMouse = true
-        case .leftMouseDragged, .rightMouseDragged, .otherMouseDragged:
-            guard isTrackingMouse else { return }
-        case .leftMouseUp, .rightMouseUp, .otherMouseUp:
-            guard isTrackingMouse else { return }
-            isTrackingMouse = false
-        default:
-            break
-        }
-        super.sendEvent(event)
-    }
 
     override func mouseDown(with event: NSEvent) {
         initialMouseLocation = NSEvent.mouseLocation
