@@ -52,6 +52,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             calendarManager.startPolling()
         }
 
+        updatePanel()
         observeOverlayState()
     }
 
