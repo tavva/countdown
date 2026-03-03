@@ -5,10 +5,8 @@ Thanks for your interest in contributing! Here's how to get started.
 ## Getting Set Up
 
 1. Fork and clone the repo
-2. Install [XcodeGen](https://github.com/yonaskolb/XcodeGen): `brew install xcodegen`
-3. Set up Google OAuth credentials — see [README](README.md#google-oauth-credentials)
-4. Generate the Xcode project: `xcodegen generate`
-5. Build and run: `xcodebuild -project Countdown.xcodeproj -scheme Countdown build`
+2. Set up Google OAuth credentials — see [README](README.md#google-oauth-credentials)
+3. Build and run: `xcodebuild -project Countdown.xcodeproj -scheme Countdown build`
 
 ## Making Changes
 
@@ -26,7 +24,7 @@ Thanks for your interest in contributing! Here's how to get started.
 
 ## Project Structure
 
-The Xcode project is generated from `project.yml`. If you need to add files or change targets, edit `project.yml` and run `xcodegen generate` — don't edit the `.xcodeproj` directly.
+The Xcode project is generated from `project.yml` using [XcodeGen](https://github.com/yonaskolb/XcodeGen). If you need to add files or change targets, install XcodeGen (`brew install xcodegen`), edit `project.yml`, and run `xcodegen generate` — don't edit the `.xcodeproj` directly.
 
 Tests use the [Swift Testing](https://developer.apple.com/documentation/testing) framework (`@Test`, `#expect`), not XCTest.
 

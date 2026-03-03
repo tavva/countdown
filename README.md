@@ -45,7 +45,6 @@ All controls live in the menu bar popover: connect your Google account, pick whi
 
 - macOS 14.0 (Sonoma) or later
 - [Xcode](https://developer.apple.com/xcode/) with command-line tools
-- [XcodeGen](https://github.com/yonaskolb/XcodeGen) — `brew install xcodegen`
 - Google OAuth credentials (see below)
 
 ### Google OAuth Credentials
