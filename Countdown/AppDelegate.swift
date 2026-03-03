@@ -15,6 +15,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     var overlayPanel: OverlayPanel?
     private var panelTopEdge: CGFloat = 0
     private var panelX: CGFloat = 0
+    private var contentHeight: CGFloat = 0
 
     func applicationWillFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.prohibited)
@@ -23,7 +24,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
 
-        let circleContent = OverlayContent(manager: calendarManager)
+        let circleContent = OverlayContent(manager: calendarManager) { [weak self] height in
+            guard let self, height > 0 else { return }
+            self.contentHeight = height
+            self.updatePanel()
+        }
         let panel = OverlayPanel(content: circleContent)
         panel.onTap = { [weak self] in
             guard let model = self?.calendarManager.model else { return }
@@ -81,7 +86,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard let panel = overlayPanel else { return }
 
         if calendarManager.model.shouldShowOverlay {
-            let height: CGFloat = calendarManager.model.showingEventDetails ? 190 : 120
+            let height: CGFloat = contentHeight > 0 ? contentHeight : 120
             let width: CGFloat = 200
             panel.setFrame(NSRect(
                 x: panelX,
@@ -99,8 +104,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 }
 
+private struct ContentHeightKey: PreferenceKey {
+    nonisolated(unsafe) static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
+
 struct OverlayContent: View {
     @Bindable var manager: CalendarManager
+    var onContentHeight: ((CGFloat) -> Void)?
 
     private var timeFormatter: DateFormatter {
         let f = DateFormatter()
@@ -140,7 +153,13 @@ struct OverlayContent: View {
             }
         }
         .frame(width: 200)
-        .frame(maxHeight: .infinity, alignment: .top)
+        .fixedSize(horizontal: false, vertical: true)
+        .background(GeometryReader { geo in
+            Color.clear.preference(key: ContentHeightKey.self, value: geo.size.height)
+        })
+        .onPreferenceChange(ContentHeightKey.self) { height in
+            onContentHeight?(height)
+        }
         .background(.clear)
     }
 }
