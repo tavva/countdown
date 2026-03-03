@@ -66,8 +66,7 @@ cd countdown
 cp Countdown/Config.plist.template Countdown/Config.plist
 # Edit Config.plist — fill in GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET
 
-# Generate the Xcode project and build
-xcodegen generate
+# Build and run
 xcodebuild -project Countdown.xcodeproj -scheme Countdown build
 open DerivedData/Build/Products/Debug/Countdown.app
 ```
@@ -81,24 +80,11 @@ Or open `Countdown.xcodeproj` in Xcode and hit Run.
 3. Authorise in your browser
 4. The countdown circle appears when an event is within 60 minutes
 
-## Development
+## Contributing
 
-The Xcode project is generated from `project.yml` using [XcodeGen](https://github.com/yonaskolb/XcodeGen). Edit `project.yml` for target or dependency changes, then run `xcodegen generate`.
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
-### Running Tests
-
-```bash
-# All tests
-xcodebuild -project Countdown.xcodeproj -scheme CountdownTests test
-
-# Single test class
-xcodebuild -project Countdown.xcodeproj -scheme CountdownTests \
-  test -only-testing:CountdownTests/CountdownModelTests
-```
-
-Tests use the [Swift Testing](https://developer.apple.com/documentation/testing) framework (`@Test`, `#expect`), not XCTest.
-
-### Architecture
+## Architecture
 
 ```
 Google Calendar API  ←  CalendarClient  ←  CalendarManager (60s polling)
