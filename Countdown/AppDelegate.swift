@@ -140,7 +140,7 @@ struct OverlayContent: View {
             }
         }
         .frame(width: 200)
-        .fixedSize(horizontal: false, vertical: true)
+        .frame(maxHeight: .infinity, alignment: .top)
         .background(.clear)
     }
 }

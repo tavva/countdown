@@ -29,7 +29,7 @@ enum OverlayPosition {
 
 enum CircleHitTest {
     static let radius: CGFloat = 45
-    static let centreOffsetFromTop: CGFloat = 60
+    static let centreOffsetFromTop: CGFloat = 55
 
     static func isInsideCircle(point: CGPoint, viewSize: CGSize) -> Bool {
         let centreX = viewSize.width / 2.0
