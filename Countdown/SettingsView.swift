@@ -8,40 +8,41 @@ struct SettingsView: View {
     @Bindable var manager: CalendarManager
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            statusSection
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                statusSection
 
-            Divider()
-
-            accountSection
-
-            Divider()
-
-            filterSection
-
-            if manager.isSignedIn && !manager.calendars.isEmpty {
                 Divider()
-                calendarsSection
-            }
 
-            Divider()
+                accountSection
 
-            Toggle("Launch at login", isOn: launchAtLoginBinding)
-                .toggleStyle(.switch)
+                Divider()
 
-            Spacer()
+                filterSection
 
-            HStack {
-                Spacer()
-                Button("Quit") {
-                    NSApp.terminate(nil)
+                if manager.isSignedIn && !manager.calendars.isEmpty {
+                    Divider()
+                    calendarsSection
                 }
-                .buttonStyle(.plain)
-                .foregroundStyle(.secondary)
+
+                Divider()
+
+                Toggle("Launch at login", isOn: launchAtLoginBinding)
+                    .toggleStyle(.switch)
+
+                HStack {
+                    Spacer()
+                    Button("Quit") {
+                        NSApp.terminate(nil)
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.secondary)
+                }
             }
+            .padding()
         }
-        .padding()
-        .frame(minWidth: 280, maxWidth: 280, minHeight: 260)
+        .frame(width: 280)
+        .frame(maxHeight: 500)
     }
 
     private var meetingsOnlyBinding: Binding<Bool> {
@@ -178,28 +179,25 @@ struct SettingsView: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
 
-            ScrollView {
-                VStack(spacing: 4) {
-                    ForEach(manager.calendars) { calendar in
-                        HStack {
-                            Circle()
-                                .fill(Color(hex: calendar.backgroundColor))
-                                .frame(width: 10, height: 10)
-                            Text(calendar.summary)
-                                .font(.body)
-                                .lineLimit(1)
-                            Spacer()
-                            Toggle("", isOn: Binding(
-                                get: { manager.isCalendarEnabled(calendar.id) },
-                                set: { _ in manager.toggleCalendar(calendar.id) }
-                            ))
-                            .toggleStyle(.switch)
-                            .labelsHidden()
-                        }
+            VStack(spacing: 4) {
+                ForEach(manager.calendars) { calendar in
+                    HStack {
+                        Circle()
+                            .fill(Color(hex: calendar.backgroundColor))
+                            .frame(width: 10, height: 10)
+                        Text(calendar.summary)
+                            .font(.body)
+                            .lineLimit(1)
+                        Spacer()
+                        Toggle("", isOn: Binding(
+                            get: { manager.isCalendarEnabled(calendar.id) },
+                            set: { _ in manager.toggleCalendar(calendar.id) }
+                        ))
+                        .toggleStyle(.switch)
+                        .labelsHidden()
                     }
                 }
             }
-            .frame(maxHeight: 120)
         }
     }
 }
