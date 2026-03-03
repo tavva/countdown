@@ -39,41 +39,17 @@ The countdown circle appears automatically when a Google Calendar event is withi
 
 All controls live in the menu bar popover: connect your Google account, pick which calendars to track, toggle the meetings-only filter, and choose whether the circle is always visible or only before events.
 
-## Setup
+## Installation
 
-### Prerequisites
+### Requirements
 
 - macOS 14.0 (Sonoma) or later
-- [Xcode](https://developer.apple.com/xcode/) with command-line tools
-- Google OAuth credentials (see below)
 
-### Google OAuth Credentials
+### Download
 
-1. Go to the [Google Cloud Console](https://console.cloud.google.com/)
-2. Create a project (or select an existing one)
-3. Enable the **Google Calendar API**
-4. Go to **Credentials** → **Create Credentials** → **OAuth client ID**
-5. Choose **Desktop app** as the application type
-6. Copy the **Client ID** and **Client Secret**
+Download the latest `.dmg` from [GitHub Releases](https://github.com/tavva/countdown/releases), open it, and drag Countdown to your Applications folder.
 
-### Build & Run
-
-```bash
-git clone https://github.com/tavva/countdown.git
-cd countdown
-
-# Add your OAuth credentials
-cp Countdown/Config.plist.template Countdown/Config.plist
-# Edit Config.plist — fill in GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET
-
-# Build and run
-xcodebuild -project Countdown.xcodeproj -scheme Countdown build
-open DerivedData/Build/Products/Debug/Countdown.app
-```
-
-Or open `Countdown.xcodeproj` in Xcode and hit Run.
-
-### First Launch
+### Getting Started
 
 1. Click the circle icon in your menu bar
 2. Click **Connect Google Account**

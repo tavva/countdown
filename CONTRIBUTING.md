@@ -4,9 +4,28 @@ Thanks for your interest in contributing! Here's how to get started.
 
 ## Getting Set Up
 
+### Google OAuth Credentials
+
+You'll need your own Google OAuth credentials to run from source:
+
+1. Go to the [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a project (or select an existing one)
+3. Enable the **Google Calendar API**
+4. Go to **Credentials** → **Create Credentials** → **OAuth client ID**
+5. Choose **Desktop app** as the application type
+6. Copy the **Client ID** and **Client Secret**
+
+### Build & Run
+
 1. Fork and clone the repo
-2. Set up Google OAuth credentials — see [README](README.md#google-oauth-credentials)
+2. Add your OAuth credentials:
+   ```bash
+   cp Countdown/Config.plist.template Countdown/Config.plist
+   # Edit Config.plist — fill in GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET
+   ```
 3. Build and run: `xcodebuild -project Countdown.xcodeproj -scheme Countdown build`
+
+Or open `Countdown.xcodeproj` in Xcode and hit Run.
 
 ## Making Changes
 
