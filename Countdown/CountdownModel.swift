@@ -21,11 +21,12 @@ final class CountdownModel {
         set { UserDefaults.standard.set(newValue, forKey: "alwaysShowCircle") }
     }
 
-    private(set) var shouldShowOverlay: Bool = false
+    private(set) var shouldShowOverlay: Bool = true
     private(set) var minutesRemaining: Int = 0
     private(set) var colourProgress: Double = 0.0  // 0 = green (60 min), 1 = red (0 min)
     private(set) var isFlashing: Bool = false
     private(set) var isIdle: Bool = false
+    private(set) var isLoading: Bool = true
     private(set) var ringProgress: Double = 0.0  // 0 = no ring, 1 = full ring
     var showingEventDetails: Bool {
         get {
@@ -39,6 +40,7 @@ final class CountdownModel {
     private var flashAcknowledgedEventID: String?
 
     func setEvents(_ events: [CalendarEvent]) {
+        isLoading = false
         nextEvent = events.first { $0.startTime.timeIntervalSinceNow >= -5 * 60 }
     }
 
@@ -52,6 +54,11 @@ final class CountdownModel {
     }
 
     func updateState() {
+        if isLoading {
+            shouldShowOverlay = true
+            return
+        }
+
         guard let event = nextEvent else {
             setIdleOrHidden()
             return

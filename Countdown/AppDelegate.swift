@@ -67,6 +67,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             _ = calendarManager.model.shouldShowOverlay
             _ = calendarManager.model.showingEventDetails
             _ = calendarManager.model.isIdle
+            _ = calendarManager.model.isLoading
         } onChange: { [weak self] in
             Task { @MainActor [weak self] in
                 self?.updatePanel()
@@ -115,6 +116,7 @@ struct OverlayContent: View {
                         colourProgress: manager.model.colourProgress,
                         isFlashing: manager.model.isFlashing,
                         isIdle: manager.model.isIdle,
+                        isLoading: manager.model.isLoading,
                         ringProgress: manager.model.ringProgress
                     )
 

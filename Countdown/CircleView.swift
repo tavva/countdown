@@ -8,11 +8,16 @@ struct CircleView: View {
     let colourProgress: Double  // 0 = green, 1 = red
     let isFlashing: Bool
     let isIdle: Bool
+    let isLoading: Bool
     let ringProgress: Double  // 0 = no ring, 1 = full ring
 
     @State private var flashOpacity: Double = 0.85
+    @State private var spinAngle: Double = 0
 
     private var circleColour: Color {
+        if isLoading {
+            return Color(red: 1.0, green: 0.92, blue: 0.55)
+        }
         if isIdle {
             return Color(white: 0.5)
         }
@@ -43,7 +48,12 @@ struct CircleView: View {
                     .frame(width: 86, height: 86)
             }
 
-            if !isIdle {
+            if isLoading {
+                Image(systemName: "arrow.trianglehead.2.clockwise")
+                    .font(.system(size: 28, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.8))
+                    .rotationEffect(.degrees(spinAngle))
+            } else if !isIdle {
                 Text("\(minutesRemaining)")
                     .font(.system(size: 32, weight: .bold, design: .rounded))
                     .foregroundStyle(.white)
@@ -61,6 +71,14 @@ struct CircleView: View {
             if isFlashing {
                 startFlashing()
             }
+            if isLoading {
+                startSpinning()
+            }
+        }
+        .onChange(of: isLoading) { _, loading in
+            if !loading {
+                stopSpinning()
+            }
         }
     }
 
@@ -74,6 +92,18 @@ struct CircleView: View {
     private func stopFlashing() {
         withAnimation(.default) {
             flashOpacity = 0.85
+        }
+    }
+
+    private func startSpinning() {
+        withAnimation(.linear(duration: 1.5).repeatForever(autoreverses: false)) {
+            spinAngle = 360
+        }
+    }
+
+    private func stopSpinning() {
+        withAnimation(.default) {
+            spinAngle = 0
         }
     }
 }
