@@ -49,7 +49,7 @@ struct CircleView: View {
                     .foregroundStyle(.white)
             }
         }
-        .frame(width: 90, height: 90)
+        .frame(width: 110, height: 110)
         .onChange(of: isFlashing) { _, flashing in
             if flashing {
                 startFlashing()
