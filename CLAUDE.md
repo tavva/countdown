@@ -73,3 +73,7 @@ Tests use Swift Testing framework (`@Suite`, `@Test`, `#expect`) — not XCTest.
 ## Project Generation
 
 The Xcode project is generated from `project.yml` using XcodeGen. Edit `project.yml` for target/dependency changes, then run `xcodegen generate`.
+
+## Documentation
+
+When updating README.md or CONTRIBUTING.md, check the other file to ensure they stay in sync and don't contain duplicate or contradictory information.
