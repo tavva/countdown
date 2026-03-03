@@ -72,3 +72,21 @@ struct OverlayPositionTests {
         #expect(!OverlayPosition.isVisible(origin: CGPoint(x: 1900, y: 500), panelSize: CGSize(width: 200, height: 120), screenFrames: screens))
     }
 }
+
+@Suite("OverlayLayout")
+struct OverlayLayoutTests {
+    @Test func roundsMeasuredHeightUpToWholePoints() {
+        #expect(OverlayLayout.normalizedContentHeight(189.01) == 190)
+        #expect(OverlayLayout.normalizedContentHeight(190.0) == 190)
+    }
+
+    @Test func ignoresJitterThatRoundsToCurrentHeight() {
+        #expect(!OverlayLayout.shouldApplyMeasuredHeight(current: 190, measured: 189.1))
+        #expect(!OverlayLayout.shouldApplyMeasuredHeight(current: 190, measured: 190.0))
+    }
+
+    @Test func appliesHeightWhenRoundedValueChanges() {
+        #expect(OverlayLayout.shouldApplyMeasuredHeight(current: 190, measured: 190.2))
+        #expect(OverlayLayout.shouldApplyMeasuredHeight(current: 190, measured: 191.0))
+    }
+}

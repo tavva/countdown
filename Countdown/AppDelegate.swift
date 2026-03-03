@@ -26,8 +26,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let circleContent = OverlayContent(manager: calendarManager) { [weak self] height in
             guard let self, height > 0 else { return }
-            self.contentHeight = height
-            self.updatePanel()
+            guard OverlayLayout.shouldApplyMeasuredHeight(current: self.contentHeight, measured: height) else { return }
+            self.contentHeight = OverlayLayout.normalizedContentHeight(height)
+            DispatchQueue.main.async { [weak self] in
+                self?.updatePanel()
+            }
         }
         let panel = OverlayPanel(content: circleContent)
         panel.onTap = { [weak self] in
@@ -104,6 +107,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 }
 
+enum OverlayLayout {
+    static func normalizedContentHeight(_ measured: CGFloat) -> CGFloat {
+        measured.rounded(.up)
+    }
+
+    static func shouldApplyMeasuredHeight(current: CGFloat, measured: CGFloat) -> Bool {
+        let normalized = normalizedContentHeight(measured)
+        guard normalized > 0 else { return false }
+        return normalized != current
+    }
+}
+
 private struct ContentHeightKey: PreferenceKey {
     nonisolated(unsafe) static var defaultValue: CGFloat = 0
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
@@ -150,13 +165,13 @@ struct OverlayContent: View {
                         .background(.black.opacity(0.7), in: RoundedRectangle(cornerRadius: 8))
                     }
                 }
+                .background(GeometryReader { geo in
+                    Color.clear.preference(key: ContentHeightKey.self, value: geo.size.height)
+                })
             }
         }
         .frame(width: 200)
-        .fixedSize(horizontal: false, vertical: true)
-        .background(GeometryReader { geo in
-            Color.clear.preference(key: ContentHeightKey.self, value: geo.size.height)
-        })
+        .frame(maxHeight: .infinity, alignment: .top)
         .onPreferenceChange(ContentHeightKey.self) { height in
             onContentHeight?(height)
         }
