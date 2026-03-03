@@ -4,14 +4,27 @@
 
 set -euo pipefail
 
+VERSION="${1:?Usage: $0 <version> (e.g. 1.0.0)}"
+
 PROJECT="Countdown.xcodeproj"
 SCHEME="Countdown"
 TEAM_ID="C8Q84FVJHL"
 BUILD_DIR="./build"
 ARCHIVE_PATH="$BUILD_DIR/Countdown.xcarchive"
 EXPORT_PATH="$BUILD_DIR/export"
-DMG_PATH="$BUILD_DIR/Countdown.dmg"
+DMG_PATH="$BUILD_DIR/Countdown-${VERSION}.dmg"
 NOTARIZE_PROFILE="${NOTARIZE_PROFILE:-countdown-notarize}"
+
+if ! git diff --quiet HEAD; then
+  echo "Error: working tree has uncommitted changes. Commit or stash first."
+  exit 1
+fi
+
+TAG="v${VERSION}"
+if git rev-parse "$TAG" >/dev/null 2>&1; then
+  echo "Error: tag $TAG already exists."
+  exit 1
+fi
 
 rm -rf "$BUILD_DIR"
 
@@ -79,4 +92,13 @@ xcrun notarytool submit "$DMG_PATH" \
 echo "==> Stapling..."
 xcrun stapler staple "$DMG_PATH"
 
-echo "==> Done! Send this to your friend: $DMG_PATH"
+echo "==> Tagging $TAG..."
+git tag "$TAG"
+git push origin "$TAG"
+
+echo "==> Creating GitHub release..."
+gh release create "$TAG" "$DMG_PATH" \
+  --title "Countdown $TAG" \
+  --generate-notes
+
+echo "==> Done! Release $TAG published."
