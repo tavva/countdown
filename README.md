@@ -14,7 +14,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/macOS-14%2B-blue" alt="macOS 14+">
   <img src="https://img.shields.io/badge/Swift-6-orange" alt="Swift 6">
-  <img src="https://img.shields.io/badge/licence-MIT-green" alt="Licence">
+  <img src="https://img.shields.io/badge/licence-GPL--3.0-blue" alt="Licence">
 </p>
 
 <p align="center">
@@ -115,4 +115,4 @@ Tokens are stored in the Keychain. User preferences (enabled calendars, overlay 
 
 ## Licence
 
-[MIT](LICENCE)
+[GPL v3](LICENCE)
