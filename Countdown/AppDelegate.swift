@@ -81,7 +81,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard let panel = overlayPanel else { return }
 
         if calendarManager.model.shouldShowOverlay {
-            let height: CGFloat = calendarManager.model.showingEventDetails ? 170 : 120
+            let height: CGFloat = calendarManager.model.showingEventDetails ? 190 : 120
             let width: CGFloat = 200
             panel.setFrame(NSRect(
                 x: panelX,
