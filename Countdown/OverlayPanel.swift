@@ -29,10 +29,11 @@ final class OverlayPanel: NSPanel {
     private var initialMouseLocation: CGPoint = .zero
     private var initialWindowOrigin: CGPoint = .zero
     private var didDrag = false
+    private var isTrackingMouse = false
 
     init<Content: View>(content: Content) {
         super.init(
-            contentRect: NSRect(x: 0, y: 0, width: 200, height: 100),
+            contentRect: NSRect(x: 0, y: 0, width: 200, height: 120),
             styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered,
             defer: false
@@ -48,7 +49,8 @@ final class OverlayPanel: NSPanel {
 
         let hostingView = NSHostingView(rootView: content)
         hostingView.wantsLayer = true
-        hostingView.layer?.backgroundColor = .clear
+        hostingView.layer?.isOpaque = false
+        hostingView.layer?.backgroundColor = nil
         contentView = hostingView
 
         if let saved = OverlayPosition.restore() {
@@ -60,6 +62,26 @@ final class OverlayPanel: NSPanel {
 
     override var canBecomeKey: Bool { false }
     override var canBecomeMain: Bool { false }
+
+    override func sendEvent(_ event: NSEvent) {
+        switch event.type {
+        case .leftMouseDown, .rightMouseDown, .otherMouseDown:
+            let location = event.locationInWindow
+            let centerX = frame.width / 2.0
+            let centerY = frame.height - 60.0
+            let distance = hypot(location.x - centerX, location.y - centerY)
+            guard distance <= 45 else { return }
+            isTrackingMouse = true
+        case .leftMouseDragged, .rightMouseDragged, .otherMouseDragged:
+            guard isTrackingMouse else { return }
+        case .leftMouseUp, .rightMouseUp, .otherMouseUp:
+            guard isTrackingMouse else { return }
+            isTrackingMouse = false
+        default:
+            break
+        }
+        super.sendEvent(event)
+    }
 
     override func mouseDown(with event: NSEvent) {
         initialMouseLocation = NSEvent.mouseLocation
@@ -92,6 +114,12 @@ final class OverlayPanel: NSPanel {
         }
     }
 
+    override func rightMouseUp(with event: NSEvent) {
+        let menu = NSMenu()
+        menu.addItem(withTitle: "Quit Countdown", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "")
+        NSMenu.popUpContextMenu(menu, with: event, for: contentView!)
+    }
+
     func positionBottomRight() {
         guard let screen = NSScreen.main else { return }
         let padding: CGFloat = 20
@@ -99,7 +127,7 @@ final class OverlayPanel: NSPanel {
             x: screen.visibleFrame.maxX - 200 - padding,
             y: screen.visibleFrame.minY + padding,
             width: 200,
-            height: 100
+            height: 120
         )
         setFrame(frame, display: true)
     }
