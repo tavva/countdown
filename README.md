@@ -84,20 +84,6 @@ Or open `Countdown.xcodeproj` in Xcode and hit Run.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md).
 
-## Architecture
-
-```
-Google Calendar API  ←  CalendarClient  ←  CalendarManager (60s polling)
-                                                 ↓
-                                           CountdownModel (1s state updates)
-                                                 ↓
-                                         CircleView + OverlayPanel
-```
-
-**CalendarManager** orchestrates everything: OAuth token refresh, calendar fetching, event filtering, and state updates. **CountdownModel** is a pure state machine — it computes visibility, colour progress, remaining time, and flash state from the current event list. **CircleView** renders the animated countdown, hosted in a floating **OverlayPanel** that stays on top of all windows.
-
-Tokens are stored in the Keychain. User preferences (enabled calendars, overlay position, display options) are persisted in UserDefaults.
-
 ## Licence
 
 [GPL v3](LICENCE)
