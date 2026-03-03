@@ -8,7 +8,7 @@ import Foundation
 @Suite("CalendarManager", .serialized)
 struct CalendarManagerTests {
     private let _snapshot = DefaultsSnapshot(keys: [
-        "meetingsOnly", "alwaysShowCircle",
+        "meetingsOnly", "alwaysShowCircle", "enabledCalendarIDs",
     ])
 
     @Test @MainActor func setMeetingsOnlyUpdatesOverlayImmediately() {
@@ -29,6 +29,27 @@ struct CalendarManagerTests {
         manager.setMeetingsOnly(true)
 
         #expect(manager.model.meetingsOnly == true)
+        #expect(manager.model.shouldShowOverlay == false)
+    }
+
+    @Test @MainActor func signOutClearsCountdownState() async {
+        let manager = CalendarManager()
+        manager.model.setEvents([])
+        manager.model.alwaysShowCircle = false
+        manager.model.nextEvent = CalendarEvent(
+            id: "1",
+            summary: "Meeting",
+            startTime: Date().addingTimeInterval(30 * 60),
+            endTime: Date().addingTimeInterval(60 * 60),
+            hasOtherAttendees: true
+        )
+        manager.model.updateState()
+        #expect(manager.model.shouldShowOverlay == true)
+        #expect(manager.model.isIdle == false)
+
+        await manager.signOut()
+
+        #expect(manager.model.nextEvent == nil)
         #expect(manager.model.shouldShowOverlay == false)
     }
 

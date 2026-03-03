@@ -63,7 +63,8 @@ final class CalendarManager {
             isSignedIn = true
             errorMessage = nil
 
-            startPolling()
+            await fetchEvents()
+            startPolling(skipInitialFetch: true)
         } catch {
             errorMessage = "Sign-in failed: \(error.localizedDescription)"
         }
@@ -80,6 +81,7 @@ final class CalendarManager {
         isSignedIn = false
         userEmail = nil
         model.setEvents([])
+        model.updateState()
         calendars = []
         UserDefaults.standard.removeObject(forKey: "enabledCalendarIDs")
 
@@ -126,8 +128,8 @@ final class CalendarManager {
 
     // MARK: - Polling
 
-    func startPolling() {
-        poll()
+    func startPolling(skipInitialFetch: Bool = false) {
+        if !skipInitialFetch { poll() }
 
         pollingTimer?.invalidate()
         pollingTimer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak self] _ in
