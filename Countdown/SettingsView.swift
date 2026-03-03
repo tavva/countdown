@@ -31,6 +31,9 @@ struct SettingsView: View {
                     .toggleStyle(.switch)
 
                 HStack {
+                    Text("Google Calendar is a trademark of Google LLC")
+                        .font(.system(size: 9))
+                        .foregroundStyle(.tertiary)
                     Spacer()
                     Button("Quit") {
                         NSApp.terminate(nil)
@@ -102,7 +105,7 @@ struct SettingsView: View {
     @ViewBuilder
     private var accountSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Google Account")
+            Text("Google Calendar")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
 
@@ -121,10 +124,15 @@ struct SettingsView: View {
                     }
                 }
             } else {
-                Button("Connect Google Account") {
+                Button {
                     Task { await manager.signIn() }
+                } label: {
+                    Image("GoogleSignIn")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 40)
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.plain)
             }
 
             if let error = manager.errorMessage {
