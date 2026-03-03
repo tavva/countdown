@@ -39,14 +39,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self.panelX = panel.frame.origin.x
         }
         self.overlayPanel = panel
+        panel.ensureOnScreen()
         panelTopEdge = panel.frame.origin.y + panel.frame.height
         panelX = panel.frame.origin.x
+
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(screenDidChange),
+            name: NSApplication.didChangeScreenParametersNotification, object: nil
+        )
 
         if calendarManager.isSignedIn {
             calendarManager.startPolling()
         }
 
         observeOverlayState()
+    }
+
+    @objc private func screenDidChange(_ notification: Notification) {
+        guard let panel = overlayPanel else { return }
+        panel.ensureOnScreen()
+        panelTopEdge = panel.frame.origin.y + panel.frame.height
+        panelX = panel.frame.origin.x
     }
 
     private func observeOverlayState() {
@@ -66,7 +79,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard let panel = overlayPanel else { return }
 
         if calendarManager.model.shouldShowOverlay {
-            let height: CGFloat = calendarManager.model.showingEventDetails ? 150 : 100
+            let height: CGFloat = calendarManager.model.showingEventDetails ? 170 : 120
             let width: CGFloat = 200
             panel.setFrame(NSRect(
                 x: panelX,

@@ -1,5 +1,5 @@
 // ABOUTME: Floating borderless panel that displays the countdown circle on the desktop.
-// ABOUTME: Positions itself in the bottom-right corner (or saved position) and stays above all windows.
+// ABOUTME: Positions itself in the top-left corner (or saved position) and stays above all windows.
 
 import AppKit
 import SwiftUI
@@ -19,6 +19,11 @@ enum OverlayPosition {
 
     static func clear() {
         UserDefaults.standard.removeObject(forKey: key)
+    }
+
+    static func isVisible(origin: CGPoint, panelSize: CGSize, screenFrames: [CGRect]) -> Bool {
+        let centre = CGPoint(x: origin.x + panelSize.width / 2, y: origin.y + panelSize.height / 2)
+        return screenFrames.contains { $0.contains(centre) }
     }
 }
 
@@ -56,7 +61,7 @@ final class OverlayPanel: NSPanel {
         if let saved = OverlayPosition.restore() {
             setFrameOrigin(saved)
         } else {
-            positionBottomRight()
+            positionTopLeft()
         }
     }
 
@@ -120,15 +125,23 @@ final class OverlayPanel: NSPanel {
         NSMenu.popUpContextMenu(menu, with: event, for: contentView!)
     }
 
-    func positionBottomRight() {
+    func positionTopLeft() {
         guard let screen = NSScreen.main else { return }
         let padding: CGFloat = 20
         let frame = NSRect(
-            x: screen.visibleFrame.maxX - 200 - padding,
-            y: screen.visibleFrame.minY + padding,
+            x: screen.visibleFrame.minX + padding,
+            y: screen.visibleFrame.maxY - 120 - padding,
             width: 200,
             height: 120
         )
         setFrame(frame, display: true)
+    }
+
+    func ensureOnScreen() {
+        let screenFrames = NSScreen.screens.map(\.frame)
+        if !OverlayPosition.isVisible(origin: frame.origin, panelSize: frame.size, screenFrames: screenFrames) {
+            positionTopLeft()
+            OverlayPosition.save(frame.origin)
+        }
     }
 }
