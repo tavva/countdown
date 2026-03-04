@@ -49,6 +49,7 @@ class CircleHitTestView: NSView {
 final class OverlayPanel: NSPanel {
     var onTap: (() -> Void)?
     var onPositionChange: (() -> Void)?
+    var onSettings: (() -> Void)?
 
     private var initialMouseLocation: CGPoint = .zero
     private var initialWindowOrigin: CGPoint = .zero
@@ -124,8 +125,16 @@ final class OverlayPanel: NSPanel {
 
     override func rightMouseUp(with event: NSEvent) {
         let menu = NSMenu()
+        let settingsItem = NSMenuItem(title: "Settings…", action: #selector(settingsMenuAction), keyEquivalent: ",")
+        settingsItem.target = self
+        menu.addItem(settingsItem)
+        menu.addItem(NSMenuItem.separator())
         menu.addItem(withTitle: "Quit Countdown", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "")
         NSMenu.popUpContextMenu(menu, with: event, for: contentView!)
+    }
+
+    @objc private func settingsMenuAction(_ sender: Any?) {
+        onSettings?()
     }
 
     func positionTopLeft() {

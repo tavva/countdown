@@ -13,6 +13,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }()
 
     var overlayPanel: OverlayPanel?
+    private var settingsPanel: NSPanel?
     private var panelTopEdge: CGFloat = 0
     private var panelX: CGFloat = 0
     private var contentHeight: CGFloat = 0
@@ -40,6 +41,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             } else {
                 model.toggleEventDetails()
             }
+        }
+        panel.onSettings = { [weak self] in
+            self?.showSettingsPanel()
         }
         panel.onPositionChange = { [weak self] in
             guard let self, let panel = self.overlayPanel else { return }
@@ -83,6 +87,29 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 self?.observeOverlayState()
             }
         }
+    }
+
+    private func showSettingsPanel() {
+        if let existing = settingsPanel, existing.isVisible {
+            existing.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            return
+        }
+
+        let panel = NSPanel(
+            contentRect: NSRect(x: 0, y: 0, width: 280, height: 400),
+            styleMask: [.titled, .closable],
+            backing: .buffered,
+            defer: false
+        )
+        panel.title = "Countdown Settings"
+        panel.contentView = NSHostingView(rootView: SettingsView(manager: calendarManager))
+        panel.center()
+        panel.isReleasedWhenClosed = false
+        panel.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+
+        settingsPanel = panel
     }
 
     private func updatePanel() {
