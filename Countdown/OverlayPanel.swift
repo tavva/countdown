@@ -31,7 +31,8 @@ enum CircleHitTest {
     static let radius: CGFloat = 45
     static let centreOffsetFromTop: CGFloat = 55
 
-    static func isInsideCircle(point: CGPoint, viewSize: CGSize) -> Bool {
+    static func isInsideCircle(point: CGPoint, viewSize: CGSize, compact: Bool) -> Bool {
+        if compact { return true }
         let centreX = viewSize.width / 2.0
         let centreY = viewSize.height - centreOffsetFromTop
         let distance = hypot(point.x - centreX, point.y - centreY)
@@ -40,8 +41,10 @@ enum CircleHitTest {
 }
 
 class CircleHitTestView: NSView {
+    var isCompact: Bool = false
+
     override func hitTest(_ point: NSPoint) -> NSView? {
-        guard CircleHitTest.isInsideCircle(point: point, viewSize: bounds.size) else { return nil }
+        guard CircleHitTest.isInsideCircle(point: point, viewSize: bounds.size, compact: isCompact) else { return nil }
         return super.hitTest(point)
     }
 }
@@ -50,6 +53,11 @@ final class OverlayPanel: NSPanel {
     var onTap: (() -> Void)?
     var onPositionChange: (() -> Void)?
     var onSettings: (() -> Void)?
+    var onToggleCompact: (() -> Void)?
+
+    var isCompact: Bool = false {
+        didSet { (contentView as? CircleHitTestView)?.isCompact = isCompact }
+    }
 
     private var initialMouseLocation: CGPoint = .zero
     private var initialWindowOrigin: CGPoint = .zero

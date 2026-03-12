@@ -28,6 +28,11 @@ final class CountdownModel {
     private(set) var isIdle: Bool = false
     private(set) var isLoading: Bool = true
     private(set) var ringProgress: Double = 0.0  // 0 = no ring, 1 = full ring
+    var compactMode: Bool {
+        get { UserDefaults.standard.bool(forKey: "compactMode") }
+        set { UserDefaults.standard.set(newValue, forKey: "compactMode") }
+    }
+
     var showingEventDetails: Bool {
         get {
             if UserDefaults.standard.object(forKey: "showingEventDetails") == nil { return true }
@@ -42,6 +47,10 @@ final class CountdownModel {
     func setEvents(_ events: [CalendarEvent]) {
         isLoading = false
         nextEvent = events.first { $0.startTime.timeIntervalSinceNow >= -5 * 60 }
+    }
+
+    func toggleCompactMode() {
+        compactMode.toggle()
     }
 
     func toggleEventDetails() {

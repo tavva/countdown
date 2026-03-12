@@ -76,17 +76,17 @@ struct OverlayPositionTests {
 @Suite("OverlayLayout")
 struct OverlayLayoutTests {
     @Test func roundsMeasuredHeightUpToWholePoints() {
-        #expect(OverlayLayout.normalizedContentHeight(189.01) == 190)
-        #expect(OverlayLayout.normalizedContentHeight(190.0) == 190)
+        #expect(OverlayLayout.normalizedSize(189.01) == 190)
+        #expect(OverlayLayout.normalizedSize(190.0) == 190)
     }
 
     @Test func ignoresJitterThatRoundsToCurrentHeight() {
-        #expect(!OverlayLayout.shouldApplyMeasuredHeight(current: 190, measured: 189.1))
-        #expect(!OverlayLayout.shouldApplyMeasuredHeight(current: 190, measured: 190.0))
+        #expect(!OverlayLayout.shouldApplyMeasuredSize(current: 190, measured: 189.1))
+        #expect(!OverlayLayout.shouldApplyMeasuredSize(current: 190, measured: 190.0))
     }
 
     @Test func appliesHeightWhenRoundedValueChanges() {
-        #expect(OverlayLayout.shouldApplyMeasuredHeight(current: 190, measured: 190.2))
-        #expect(OverlayLayout.shouldApplyMeasuredHeight(current: 190, measured: 191.0))
+        #expect(OverlayLayout.shouldApplyMeasuredSize(current: 190, measured: 190.2))
+        #expect(OverlayLayout.shouldApplyMeasuredSize(current: 190, measured: 191.0))
     }
 }

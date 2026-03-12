@@ -8,7 +8,7 @@ import Foundation
 @Suite("CountdownModel", .serialized)
 struct CountdownModelTests {
     private let _snapshot = DefaultsSnapshot(keys: [
-        "meetingsOnly", "alwaysShowCircle", "showingEventDetails",
+        "meetingsOnly", "alwaysShowCircle", "showingEventDetails", "compactMode",
     ])
 
     // MARK: - Loading state
@@ -517,6 +517,32 @@ struct CountdownModelTests {
         model.alwaysShowCircle = true
         model.updateState()
         #expect(model.ringProgress == 0.0)
+    }
+
+    // MARK: - Compact mode
+
+    @Test func compactModeDefaultsToFalse() {
+        UserDefaults.standard.removeObject(forKey: "compactMode")
+        let model = CountdownModel()
+        #expect(model.compactMode == false)
+    }
+
+    @Test func compactModePersists() {
+        let model = CountdownModel()
+        model.compactMode = true
+        #expect(model.compactMode == true)
+
+        let model2 = CountdownModel()
+        #expect(model2.compactMode == true)
+    }
+
+    @Test func toggleCompactMode() {
+        let model = CountdownModel()
+        model.compactMode = false
+        model.toggleCompactMode()
+        #expect(model.compactMode == true)
+        model.toggleCompactMode()
+        #expect(model.compactMode == false)
     }
 }
 

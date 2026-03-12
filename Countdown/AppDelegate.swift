@@ -17,6 +17,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var panelTopEdge: CGFloat = 0
     private var panelX: CGFloat = 0
     private var contentHeight: CGFloat = 0
+    private var contentWidth: CGFloat = 0
 
     func applicationWillFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.prohibited)
@@ -27,8 +28,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let circleContent = OverlayContent(manager: calendarManager) { [weak self] height in
             guard let self, height > 0 else { return }
-            guard OverlayLayout.shouldApplyMeasuredHeight(current: self.contentHeight, measured: height) else { return }
-            self.contentHeight = OverlayLayout.normalizedContentHeight(height)
+            guard OverlayLayout.shouldApplyMeasuredSize(current: self.contentHeight, measured: height) else { return }
+            self.contentHeight = OverlayLayout.normalizedSize(height)
+            DispatchQueue.main.async { [weak self] in
+                self?.updatePanel()
+            }
+        } onContentWidth: { [weak self] width in
+            guard let self, width > 0 else { return }
+            guard OverlayLayout.shouldApplyMeasuredSize(current: self.contentWidth, measured: width) else { return }
+            self.contentWidth = OverlayLayout.normalizedSize(width)
             DispatchQueue.main.async { [weak self] in
                 self?.updatePanel()
             }
@@ -81,6 +89,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             _ = calendarManager.model.showingEventDetails
             _ = calendarManager.model.isIdle
             _ = calendarManager.model.isLoading
+            _ = calendarManager.model.compactMode
         } onChange: { [weak self] in
             Task { @MainActor [weak self] in
                 self?.updatePanel()
@@ -116,14 +125,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard let panel = overlayPanel else { return }
 
         if calendarManager.model.shouldShowOverlay {
-            let height: CGFloat = contentHeight > 0 ? contentHeight : 120
-            let width: CGFloat = 200
+            let compact = calendarManager.model.compactMode
+            let height: CGFloat = contentHeight > 0 ? contentHeight : (compact ? 36 : 120)
+            let width: CGFloat = compact ? (contentWidth > 0 ? contentWidth : 80) : 200
             panel.setFrame(NSRect(
                 x: panelX,
                 y: panelTopEdge - height,
                 width: width,
                 height: height
             ), display: true)
+            panel.isCompact = compact
 
             panel.ignoresMouseEvents = false
             panel.orderFront(nil)
@@ -135,12 +146,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 }
 
 enum OverlayLayout {
-    static func normalizedContentHeight(_ measured: CGFloat) -> CGFloat {
+    static func normalizedSize(_ measured: CGFloat) -> CGFloat {
         measured.rounded(.up)
     }
 
-    static func shouldApplyMeasuredHeight(current: CGFloat, measured: CGFloat) -> Bool {
-        let normalized = normalizedContentHeight(measured)
+    static func shouldApplyMeasuredSize(current: CGFloat, measured: CGFloat) -> Bool {
+        let normalized = normalizedSize(measured)
         guard normalized > 0 else { return false }
         return normalized != current
     }
@@ -153,9 +164,17 @@ private struct ContentHeightKey: PreferenceKey {
     }
 }
 
+private struct ContentWidthKey: PreferenceKey {
+    nonisolated(unsafe) static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
+
 struct OverlayContent: View {
     @Bindable var manager: CalendarManager
     var onContentHeight: ((CGFloat) -> Void)?
+    var onContentWidth: ((CGFloat) -> Void)?
 
     private var timeFormatter: DateFormatter {
         let f = DateFormatter()
@@ -166,42 +185,96 @@ struct OverlayContent: View {
     var body: some View {
         Group {
             if manager.model.shouldShowOverlay {
-                VStack(spacing: 4) {
-                    CircleView(
-                        minutesRemaining: manager.model.minutesRemaining,
-                        colourProgress: manager.model.colourProgress,
-                        isFlashing: manager.model.isFlashing,
-                        isIdle: manager.model.isIdle,
-                        isLoading: manager.model.isLoading,
-                        ringProgress: manager.model.ringProgress
-                    )
-
-                    if manager.model.showingEventDetails, let event = manager.model.displayedEvent {
-                        VStack(spacing: 2) {
-                            Text(event.summary)
-                                .font(.system(size: 12, weight: .semibold))
-                                .foregroundStyle(.white)
-                                .lineLimit(2)
-                                .multilineTextAlignment(.center)
-                            Text("\(timeFormatter.string(from: event.startTime)) – \(timeFormatter.string(from: event.endTime))")
-                                .font(.system(size: 11))
-                                .foregroundStyle(.white.opacity(0.7))
-                        }
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
-                        .background(.black.opacity(0.7), in: RoundedRectangle(cornerRadius: 8))
-                    }
+                if manager.model.compactMode {
+                    compactLayout
+                } else {
+                    standardLayout
                 }
-                .background(GeometryReader { geo in
-                    Color.clear.preference(key: ContentHeightKey.self, value: geo.size.height)
-                })
             }
         }
-        .frame(width: 200)
+        .fixedSize()
         .frame(maxHeight: .infinity, alignment: .top)
         .onPreferenceChange(ContentHeightKey.self) { height in
             onContentHeight?(height)
         }
+        .onPreferenceChange(ContentWidthKey.self) { width in
+            onContentWidth?(width)
+        }
         .background(.clear)
+    }
+
+    @ViewBuilder
+    private var standardLayout: some View {
+        VStack(spacing: 4) {
+            CircleView(
+                minutesRemaining: manager.model.minutesRemaining,
+                colourProgress: manager.model.colourProgress,
+                isFlashing: manager.model.isFlashing,
+                isIdle: manager.model.isIdle,
+                isLoading: manager.model.isLoading,
+                ringProgress: manager.model.ringProgress
+            )
+
+            if manager.model.showingEventDetails, let event = manager.model.displayedEvent {
+                eventDetailsBox(event: event)
+            }
+        }
+        .frame(width: 200)
+        .background(GeometryReader { geo in
+            Color.clear.preference(key: ContentHeightKey.self, value: geo.size.height)
+        })
+    }
+
+    @ViewBuilder
+    private var compactLayout: some View {
+        HStack(spacing: 6) {
+            CircleView(
+                minutesRemaining: manager.model.minutesRemaining,
+                colourProgress: manager.model.colourProgress,
+                isFlashing: manager.model.isFlashing,
+                isIdle: manager.model.isIdle,
+                isLoading: manager.model.isLoading,
+                ringProgress: manager.model.ringProgress,
+                compact: true
+            )
+
+            if !manager.model.isLoading && !manager.model.isIdle {
+                Text("\(manager.model.minutesRemaining)")
+                    .font(.system(size: 14, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white)
+            }
+
+            if manager.model.showingEventDetails, let event = manager.model.displayedEvent {
+                Text("\(event.summary) – \(timeFormatter.string(from: event.startTime))")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.9))
+                    .lineLimit(1)
+            }
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(.black.opacity(0.7), in: Capsule())
+        .background(GeometryReader { geo in
+            Color.clear
+                .preference(key: ContentHeightKey.self, value: geo.size.height)
+                .preference(key: ContentWidthKey.self, value: geo.size.width)
+        })
+    }
+
+    @ViewBuilder
+    private func eventDetailsBox(event: CalendarEvent) -> some View {
+        VStack(spacing: 2) {
+            Text(event.summary)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(.white)
+                .lineLimit(2)
+                .multilineTextAlignment(.center)
+            Text("\(timeFormatter.string(from: event.startTime)) – \(timeFormatter.string(from: event.endTime))")
+                .font(.system(size: 11))
+                .foregroundStyle(.white.opacity(0.7))
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(.black.opacity(0.7), in: RoundedRectangle(cornerRadius: 8))
     }
 }

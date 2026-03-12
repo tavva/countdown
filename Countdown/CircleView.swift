@@ -10,6 +10,7 @@ struct CircleView: View {
     let isIdle: Bool
     let isLoading: Bool
     let ringProgress: Double  // 0 = no ring, 1 = full ring
+    var compact: Bool = false
 
     @State private var flashOpacity: Double = 0.85
     @State private var spinAngle: Double = 0
@@ -32,34 +33,49 @@ struct CircleView: View {
         )
     }
 
+    private var dotSize: CGFloat { compact ? 20 : 80 }
+    private var ringSize: CGFloat { compact ? 24 : 86 }
+    private var ringWidth: CGFloat { compact ? 2 : 3 }
+    private var frameSize: CGFloat { compact ? 28 : 110 }
+    private var shadowRadius: CGFloat { compact ? 4 : 10 }
+
     var body: some View {
         ZStack {
             Circle()
                 .fill(circleColour)
                 .opacity(flashOpacity)
-                .frame(width: 80, height: 80)
-                .shadow(color: .black.opacity(0.3), radius: 10)
+                .frame(width: dotSize, height: dotSize)
+                .shadow(color: .black.opacity(0.3), radius: shadowRadius)
 
             if ringProgress > 0 {
                 Circle()
                     .trim(from: 0, to: ringProgress)
-                    .stroke(Color.white.opacity(0.6), lineWidth: 3)
+                    .stroke(Color.white.opacity(0.6), lineWidth: ringWidth)
                     .rotationEffect(.degrees(-90))
-                    .frame(width: 86, height: 86)
+                    .frame(width: ringSize, height: ringSize)
             }
 
-            if isLoading {
-                Image(systemName: "arrow.trianglehead.2.clockwise")
-                    .font(.system(size: 28, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.8))
-                    .rotationEffect(.degrees(spinAngle))
-            } else if !isIdle {
-                Text("\(minutesRemaining)")
-                    .font(.system(size: 32, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
+            if compact {
+                if isLoading {
+                    Image(systemName: "arrow.trianglehead.2.clockwise")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.8))
+                        .rotationEffect(.degrees(spinAngle))
+                }
+            } else {
+                if isLoading {
+                    Image(systemName: "arrow.trianglehead.2.clockwise")
+                        .font(.system(size: 28, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.8))
+                        .rotationEffect(.degrees(spinAngle))
+                } else if !isIdle {
+                    Text("\(minutesRemaining)")
+                        .font(.system(size: 32, weight: .bold, design: .rounded))
+                        .foregroundStyle(.white)
+                }
             }
         }
-        .frame(width: 110, height: 110)
+        .frame(width: frameSize, height: frameSize)
         .onChange(of: isFlashing) { _, flashing in
             if flashing {
                 startFlashing()
