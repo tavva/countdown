@@ -17,6 +17,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var panelTopEdge: CGFloat = 0
     private var panelX: CGFloat = 0
     private var contentHeight: CGFloat = 0
+    private var contentWidth: CGFloat = 0
     private var lastCompactState: Bool = false
 
     func applicationWillFinishLaunching(_ notification: Notification) {
@@ -26,14 +27,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
 
-        let circleContent = OverlayContent(manager: calendarManager) { [weak self] height in
+        let circleContent = OverlayContent(manager: calendarManager, onContentHeight: { [weak self] height in
             guard let self, height > 0 else { return }
             guard OverlayLayout.shouldApplyMeasuredSize(current: self.contentHeight, measured: height) else { return }
             self.contentHeight = OverlayLayout.normalizedSize(height)
             DispatchQueue.main.async { [weak self] in
                 self?.updatePanel()
             }
-        }
+        }, onContentWidth: { [weak self] width in
+            guard let self, width > 0 else { return }
+            guard OverlayLayout.shouldApplyMeasuredSize(current: self.contentWidth, measured: width) else { return }
+            self.contentWidth = OverlayLayout.normalizedSize(width)
+            DispatchQueue.main.async { [weak self] in
+                self?.updatePanel()
+            }
+        })
         let panel = OverlayPanel(content: circleContent)
         panel.onTap = { [weak self] in
             guard let model = self?.calendarManager.model else { return }
@@ -124,18 +132,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             let compact = calendarManager.model.compactMode
             if compact != lastCompactState {
                 contentHeight = 0
+                contentWidth = 0
                 lastCompactState = compact
             }
-            let height: CGFloat
-            let width: CGFloat
-            if compact {
-                let intrinsic = panel.contentIntrinsicSize
-                width = intrinsic.width > 0 ? intrinsic.width.rounded(.up) : 200
-                height = intrinsic.height > 0 ? intrinsic.height.rounded(.up) : 36
-            } else {
-                height = contentHeight > 0 ? contentHeight : 120
-                width = 200
-            }
+            let height: CGFloat = contentHeight > 0 ? contentHeight : (compact ? 36 : 120)
+            let width: CGFloat = compact ? (contentWidth > 0 ? contentWidth : 200) : 200
             panel.setFrame(NSRect(
                 x: panelX,
                 y: panelTopEdge - height,
@@ -172,9 +173,17 @@ private struct ContentHeightKey: PreferenceKey {
     }
 }
 
+private struct ContentWidthKey: PreferenceKey {
+    nonisolated(unsafe) static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
+
 struct OverlayContent: View {
     @Bindable var manager: CalendarManager
     var onContentHeight: ((CGFloat) -> Void)?
+    var onContentWidth: ((CGFloat) -> Void)?
 
     private var timeFormatter: DateFormatter {
         let f = DateFormatter()
@@ -194,6 +203,9 @@ struct OverlayContent: View {
         }
         .onPreferenceChange(ContentHeightKey.self) { height in
             onContentHeight?(height)
+        }
+        .onPreferenceChange(ContentWidthKey.self) { width in
+            onContentWidth?(width)
         }
         .background(.clear)
     }
@@ -249,7 +261,13 @@ struct OverlayContent: View {
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
+        .fixedSize(horizontal: true, vertical: false)
         .background(.black.opacity(0.7), in: Capsule())
+        .background(GeometryReader { geo in
+            Color.clear
+                .preference(key: ContentHeightKey.self, value: geo.size.height)
+                .preference(key: ContentWidthKey.self, value: geo.size.width)
+        })
     }
 
     @ViewBuilder
