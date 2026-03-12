@@ -18,6 +18,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var panelX: CGFloat = 0
     private var contentHeight: CGFloat = 0
     private var contentWidth: CGFloat = 0
+    private var lastCompactState: Bool = false
 
     func applicationWillFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.prohibited)
@@ -129,6 +130,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         if calendarManager.model.shouldShowOverlay {
             let compact = calendarManager.model.compactMode
+            if compact != lastCompactState {
+                contentHeight = 0
+                contentWidth = 0
+                lastCompactState = compact
+            }
             let height: CGFloat = contentHeight > 0 ? contentHeight : (compact ? 36 : 120)
             let width: CGFloat = compact ? (contentWidth > 0 ? contentWidth : 80) : 200
             panel.setFrame(NSRect(
