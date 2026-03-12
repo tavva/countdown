@@ -59,6 +59,12 @@ final class OverlayPanel: NSPanel {
         didSet { (contentView as? CircleHitTestView)?.isCompact = isCompact }
     }
 
+    var contentIntrinsicSize: CGSize {
+        guard let container = contentView as? CircleHitTestView,
+              let hostingView = container.subviews.first else { return .zero }
+        return hostingView.intrinsicContentSize
+    }
+
     private var initialMouseLocation: CGPoint = .zero
     private var initialWindowOrigin: CGPoint = .zero
     private var didDrag = false

@@ -17,7 +17,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var panelTopEdge: CGFloat = 0
     private var panelX: CGFloat = 0
     private var contentHeight: CGFloat = 0
-    private var contentWidth: CGFloat = 0
     private var lastCompactState: Bool = false
 
     func applicationWillFinishLaunching(_ notification: Notification) {
@@ -31,13 +30,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             guard let self, height > 0 else { return }
             guard OverlayLayout.shouldApplyMeasuredSize(current: self.contentHeight, measured: height) else { return }
             self.contentHeight = OverlayLayout.normalizedSize(height)
-            DispatchQueue.main.async { [weak self] in
-                self?.updatePanel()
-            }
-        } onContentWidth: { [weak self] width in
-            guard let self, width > 0 else { return }
-            guard OverlayLayout.shouldApplyMeasuredSize(current: self.contentWidth, measured: width) else { return }
-            self.contentWidth = OverlayLayout.normalizedSize(width)
             DispatchQueue.main.async { [weak self] in
                 self?.updatePanel()
             }
@@ -132,11 +124,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             let compact = calendarManager.model.compactMode
             if compact != lastCompactState {
                 contentHeight = 0
-                contentWidth = 0
                 lastCompactState = compact
             }
             let height: CGFloat = contentHeight > 0 ? contentHeight : (compact ? 36 : 120)
-            let width: CGFloat = compact ? (contentWidth > 0 ? contentWidth : 80) : 200
+            let width: CGFloat
+            if compact {
+                let intrinsic = panel.contentIntrinsicSize.width
+                width = intrinsic > 0 ? intrinsic.rounded(.up) : 200
+            } else {
+                width = 200
+            }
             panel.setFrame(NSRect(
                 x: panelX,
                 y: panelTopEdge - height,
@@ -173,17 +170,9 @@ private struct ContentHeightKey: PreferenceKey {
     }
 }
 
-private struct ContentWidthKey: PreferenceKey {
-    nonisolated(unsafe) static var defaultValue: CGFloat = 0
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = max(value, nextValue())
-    }
-}
-
 struct OverlayContent: View {
     @Bindable var manager: CalendarManager
     var onContentHeight: ((CGFloat) -> Void)?
-    var onContentWidth: ((CGFloat) -> Void)?
 
     private var timeFormatter: DateFormatter {
         let f = DateFormatter()
@@ -205,9 +194,6 @@ struct OverlayContent: View {
         .frame(maxHeight: .infinity, alignment: .top)
         .onPreferenceChange(ContentHeightKey.self) { height in
             onContentHeight?(height)
-        }
-        .onPreferenceChange(ContentWidthKey.self) { width in
-            onContentWidth?(width)
         }
         .background(.clear)
     }
@@ -264,9 +250,7 @@ struct OverlayContent: View {
         .padding(.vertical, 4)
         .background(.black.opacity(0.7), in: Capsule())
         .background(GeometryReader { geo in
-            Color.clear
-                .preference(key: ContentHeightKey.self, value: geo.size.height)
-                .preference(key: ContentWidthKey.self, value: geo.size.width)
+            Color.clear.preference(key: ContentHeightKey.self, value: geo.size.height)
         })
     }
 
