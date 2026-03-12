@@ -134,6 +134,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 contentHeight = 0
                 contentWidth = 0
                 lastCompactState = compact
+                // Hide panel until SwiftUI measures the new layout
+                panel.orderOut(nil)
+                return
             }
             let height: CGFloat = contentHeight > 0 ? contentHeight : (compact ? 36 : 120)
             let width: CGFloat = compact ? (contentWidth > 0 ? contentWidth : 200) : 200
@@ -227,10 +230,10 @@ struct OverlayContent: View {
             }
         }
         .frame(width: 200)
-        .frame(maxHeight: .infinity, alignment: .top)
         .background(GeometryReader { geo in
             Color.clear.preference(key: ContentHeightKey.self, value: geo.size.height)
         })
+        .frame(maxHeight: .infinity, alignment: .top)
     }
 
     @ViewBuilder
