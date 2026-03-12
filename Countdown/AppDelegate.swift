@@ -134,12 +134,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 contentHeight = 0
                 contentWidth = 0
                 lastCompactState = compact
-                // Hide panel until SwiftUI measures the new layout
-                panel.orderOut(nil)
-                return
             }
-            let height: CGFloat = contentHeight > 0 ? contentHeight : (compact ? 36 : 120)
-            let width: CGFloat = compact ? (contentWidth > 0 ? contentWidth : 200) : 200
+            // Generous fallbacks avoid clipping during mode transitions;
+            // the measurement callback quickly shrinks the panel to fit.
+            let height: CGFloat = contentHeight > 0 ? contentHeight : (compact ? 36 : 200)
+            let width: CGFloat = compact ? (contentWidth > 0 ? contentWidth : 400) : 200
             panel.setFrame(NSRect(
                 x: panelX,
                 y: panelTopEdge - height,
