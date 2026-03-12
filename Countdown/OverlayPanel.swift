@@ -133,12 +133,24 @@ final class OverlayPanel: NSPanel {
 
     override func rightMouseUp(with event: NSEvent) {
         let menu = NSMenu()
+
+        let compactItem = NSMenuItem(title: "Compact mode", action: #selector(compactMenuAction), keyEquivalent: "")
+        compactItem.target = self
+        compactItem.state = isCompact ? .on : .off
+        menu.addItem(compactItem)
+
+        menu.addItem(NSMenuItem.separator())
+
         let settingsItem = NSMenuItem(title: "Settings…", action: #selector(settingsMenuAction), keyEquivalent: ",")
         settingsItem.target = self
         menu.addItem(settingsItem)
         menu.addItem(NSMenuItem.separator())
         menu.addItem(withTitle: "Quit Countdown", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "")
         NSMenu.popUpContextMenu(menu, with: event, for: contentView!)
+    }
+
+    @objc private func compactMenuAction(_ sender: Any?) {
+        onToggleCompact?()
     }
 
     @objc private func settingsMenuAction(_ sender: Any?) {

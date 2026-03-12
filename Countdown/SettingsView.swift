@@ -86,6 +86,13 @@ struct SettingsView: View {
         )
     }
 
+    private var compactModeBinding: Binding<Bool> {
+        Binding(
+            get: { manager.model.compactMode },
+            set: { manager.model.compactMode = $0 }
+        )
+    }
+
     @ViewBuilder
     private var statusSection: some View {
         if let event = manager.model.nextEvent {
@@ -175,6 +182,17 @@ struct SettingsView: View {
             Picker("", selection: showEventDetailsBinding) {
                 Text("Show").tag(true)
                 Text("Hide").tag(false)
+            }
+            .pickerStyle(.segmented)
+
+            Text("Circle size")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .padding(.top, 4)
+
+            Picker("", selection: compactModeBinding) {
+                Text("Standard").tag(false)
+                Text("Compact").tag(true)
             }
             .pickerStyle(.segmented)
         }

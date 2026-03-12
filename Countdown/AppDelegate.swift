@@ -53,6 +53,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         panel.onSettings = { [weak self] in
             self?.showSettingsPanel()
         }
+        panel.onToggleCompact = { [weak self] in
+            self?.calendarManager.model.toggleCompactMode()
+        }
         panel.onPositionChange = { [weak self] in
             guard let self, let panel = self.overlayPanel else { return }
             self.panelTopEdge = panel.frame.origin.y + panel.frame.height
