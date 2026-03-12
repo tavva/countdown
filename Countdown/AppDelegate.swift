@@ -126,12 +126,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 contentHeight = 0
                 lastCompactState = compact
             }
-            let height: CGFloat = contentHeight > 0 ? contentHeight : (compact ? 36 : 120)
+            let height: CGFloat
             let width: CGFloat
             if compact {
-                let intrinsic = panel.contentIntrinsicSize.width
-                width = intrinsic > 0 ? intrinsic.rounded(.up) : 200
+                let intrinsic = panel.contentIntrinsicSize
+                width = intrinsic.width > 0 ? intrinsic.width.rounded(.up) : 200
+                height = intrinsic.height > 0 ? intrinsic.height.rounded(.up) : 36
             } else {
+                height = contentHeight > 0 ? contentHeight : 120
                 width = 200
             }
             panel.setFrame(NSRect(
@@ -190,8 +192,6 @@ struct OverlayContent: View {
                 }
             }
         }
-        .fixedSize()
-        .frame(maxHeight: .infinity, alignment: .top)
         .onPreferenceChange(ContentHeightKey.self) { height in
             onContentHeight?(height)
         }
@@ -215,6 +215,7 @@ struct OverlayContent: View {
             }
         }
         .frame(width: 200)
+        .frame(maxHeight: .infinity, alignment: .top)
         .background(GeometryReader { geo in
             Color.clear.preference(key: ContentHeightKey.self, value: geo.size.height)
         })
@@ -249,9 +250,6 @@ struct OverlayContent: View {
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
         .background(.black.opacity(0.7), in: Capsule())
-        .background(GeometryReader { geo in
-            Color.clear.preference(key: ContentHeightKey.self, value: geo.size.height)
-        })
     }
 
     @ViewBuilder
