@@ -33,6 +33,7 @@
 		D665777B4809371D8A144501 /* Config.plist.template in Resources */ = {isa = PBXBuildFile; fileRef = 11F8974166F1B12ECFD9F7F8 /* Config.plist.template */; };
 		D676ECABA4C15FEBEA004AEF /* ConfigTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE2B7F4112F14648B7DC7FC1 /* ConfigTests.swift */; };
 		E975249DE1F850E94AB2E371 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AE0899F7EBADCD899D9ED8B /* AppDelegate.swift */; };
+		EB47EF7BD3FCDCC91FBB87B7 /* UpdateManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E21A7D32A8EC0FDC622DD4F4 /* UpdateManager.swift */; };
 		EFB158280CDBE8C298C11BFC /* GoogleAuthTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F470913C55A73340956E201 /* GoogleAuthTests.swift */; };
 		F6C53A5A7E97A036401B8751 /* CountdownApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B915F61511E002C554FDADC /* CountdownApp.swift */; };
 		FB4666422C9F3CFABD87473F /* CircleHitTestViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05FA3E633BD58BBB4DA51F33 /* CircleHitTestViewTests.swift */; };
@@ -81,6 +82,7 @@
 		BE2B7F4112F14648B7DC7FC1 /* ConfigTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigTests.swift; sourceTree = "<group>"; };
 		C09221482A02E840785ABFF1 /* PKCE.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PKCE.swift; sourceTree = "<group>"; };
 		D39B9B347455AA7C2594B879 /* Config.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Config.plist; sourceTree = "<group>"; };
+		E21A7D32A8EC0FDC622DD4F4 /* UpdateManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateManager.swift; sourceTree = "<group>"; };
 		F0AEC5FD2D7555FDDD7B4F7D /* CalendarClientTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarClientTests.swift; sourceTree = "<group>"; };
 		F2A473736B067B3F95F414E2 /* CountdownModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CountdownModel.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -156,6 +158,7 @@
 				C09221482A02E840785ABFF1 /* PKCE.swift */,
 				362120747BD3E1AB65617E3E /* RedirectListener.swift */,
 				44224B96A72B955676E0B067 /* SettingsView.swift */,
+				E21A7D32A8EC0FDC622DD4F4 /* UpdateManager.swift */,
 			);
 			path = Countdown;
 			sourceTree = "<group>";
@@ -284,6 +287,7 @@
 				8A5E9DB5E94B33172F4E497E /* PKCE.swift in Sources */,
 				6126072DA56404B8C1D3D59C /* RedirectListener.swift in Sources */,
 				9E3D838A6C0014FB4F22B0BB /* SettingsView.swift in Sources */,
+				EB47EF7BD3FCDCC91FBB87B7 /* UpdateManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

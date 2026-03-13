@@ -11,6 +11,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         mgr.config = Config.load()
         return mgr
     }()
+    let updateManager = UpdateManager()
 
     var overlayPanel: OverlayPanel?
     private var settingsPanel: NSPanel?
