@@ -27,6 +27,40 @@ enum OverlayPosition {
     }
 }
 
+struct OverlayFramePlacement {
+    private var x: CGFloat
+    private var topEdge: CGFloat
+    private var restoredOrigin: CGPoint?
+
+    init(initialFrame: CGRect, restoredOrigin: CGPoint?) {
+        self.x = initialFrame.origin.x
+        self.topEdge = initialFrame.maxY
+        self.restoredOrigin = restoredOrigin
+    }
+
+    mutating func frame(for size: CGSize) -> CGRect {
+        if let restoredOrigin {
+            self.restoredOrigin = nil
+            self.x = restoredOrigin.x
+            self.topEdge = restoredOrigin.y + size.height
+            return CGRect(origin: restoredOrigin, size: size)
+        }
+
+        return CGRect(
+            x: x,
+            y: topEdge - size.height,
+            width: size.width,
+            height: size.height
+        )
+    }
+
+    mutating func record(frame: CGRect) {
+        x = frame.origin.x
+        topEdge = frame.maxY
+        restoredOrigin = nil
+    }
+}
+
 enum CircleHitTest {
     static let radius: CGFloat = 45
     static let centreOffsetFromTop: CGFloat = 55

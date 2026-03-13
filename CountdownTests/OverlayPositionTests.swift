@@ -90,3 +90,277 @@ struct OverlayLayoutTests {
         #expect(OverlayLayout.shouldApplyMeasuredSize(current: 190, measured: 191.0))
     }
 }
+
+@Suite("OverlayFramePlacement")
+struct OverlayFramePlacementTests {
+    @Test func restoredOriginIsPreservedOnFirstResize() {
+        let savedOrigin = CGPoint(x: 38, y: 1031)
+        var placement = OverlayFramePlacement(
+            initialFrame: CGRect(x: savedOrigin.x, y: savedOrigin.y, width: 200, height: 120),
+            restoredOrigin: savedOrigin
+        )
+
+        let compactFrame = placement.frame(for: CGSize(width: 44, height: 36))
+        #expect(compactFrame.origin == savedOrigin)
+
+        let detailsFrame = placement.frame(for: CGSize(width: 188, height: 60))
+        #expect(detailsFrame.origin == CGPoint(x: 38, y: 1007))
+    }
+
+    @Test func liveFrameWithoutRestoredOriginKeepsCurrentTopEdge() {
+        var placement = OverlayFramePlacement(
+            initialFrame: CGRect(x: 20, y: 900, width: 200, height: 120),
+            restoredOrigin: nil
+        )
+
+        let compactFrame = placement.frame(for: CGSize(width: 44, height: 36))
+
+        #expect(compactFrame.origin == CGPoint(x: 20, y: 984))
+    }
+}
+
+@Suite("OverlayMeasurementCache")
+struct OverlayMeasurementCacheTests {
+    @Test func keepsMeasurementsSeparatePerMode() {
+        var cache = OverlayMeasurementCache()
+
+        let appliedStandardHeight = cache.applyHeight(189.1, for: .standard)
+        let appliedCompactHeight = cache.applyHeight(35.2, for: .compact)
+        let appliedCompactWidth = cache.applyWidth(127.1, for: .compact)
+
+        #expect(appliedStandardHeight)
+        #expect(appliedCompactHeight)
+        #expect(appliedCompactWidth)
+
+        #expect(cache.size(for: .standard) == CGSize(width: 200, height: 190))
+        #expect(cache.size(for: .compact) == CGSize(width: 128, height: 36))
+    }
+
+    @Test func usesFallbackSizesUntilModeIsMeasured() {
+        let cache = OverlayMeasurementCache()
+
+        #expect(cache.size(for: .standard) == CGSize(width: 200, height: 200))
+        #expect(cache.size(for: .compact) == CGSize(width: 400, height: 36))
+    }
+
+    @Test func ignoresRoundedJitterWithinEachMode() {
+        var cache = OverlayMeasurementCache()
+
+        let appliedStandardHeight = cache.applyHeight(189.1, for: .standard)
+        let ignoredStandardJitter = cache.applyHeight(189.9, for: .standard)
+        let appliedCompactWidth = cache.applyWidth(127.1, for: .compact)
+        let ignoredCompactJitter = cache.applyWidth(127.9, for: .compact)
+
+        #expect(appliedStandardHeight)
+        #expect(!ignoredStandardJitter)
+        #expect(appliedCompactWidth)
+        #expect(!ignoredCompactJitter)
+    }
+
+    @Test func reportsWhenEachModeHasEnoughMeasurements() {
+        var cache = OverlayMeasurementCache()
+
+        #expect(!cache.hasMeasuredSize(for: .standard))
+        #expect(!cache.hasMeasuredSize(for: .compact))
+
+        _ = cache.applyHeight(189.1, for: .standard)
+        #expect(cache.hasMeasuredSize(for: .standard))
+        #expect(!cache.hasMeasuredSize(for: .compact))
+
+        _ = cache.applyHeight(35.2, for: .compact)
+        #expect(!cache.hasMeasuredSize(for: .compact))
+
+        _ = cache.applyWidth(127.1, for: .compact)
+        #expect(cache.hasMeasuredSize(for: .compact))
+    }
+
+    @Test func ignoresUndersizedTransientMeasurements() {
+        var cache = OverlayMeasurementCache()
+
+        let ignoredStandardHeight = cache.applyHeight(1, for: .standard)
+        let ignoredCompactHeight = cache.applyHeight(1, for: .compact)
+        let ignoredCompactWidth = cache.applyWidth(1, for: .compact)
+
+        #expect(!ignoredStandardHeight)
+        #expect(!ignoredCompactHeight)
+        #expect(!ignoredCompactWidth)
+        #expect(!cache.hasMeasuredSize(for: .standard))
+        #expect(!cache.hasMeasuredSize(for: .compact))
+    }
+}
+
+@Suite("OverlayTransitionState")
+struct OverlayTransitionStateTests {
+    @Test func compactTransitionWaitsForBothMeasurements() {
+        var state = OverlayTransitionState()
+
+        state.prepare(for: .compact)
+        #expect(state.isAwaitingMeasurement)
+
+        let completedAfterHeight = state.registerMeasurement(for: .compact, axis: .height)
+        #expect(!completedAfterHeight)
+        #expect(state.isAwaitingMeasurement)
+
+        let completedAfterWidth = state.registerMeasurement(for: .compact, axis: .width)
+        #expect(completedAfterWidth)
+        #expect(!state.isAwaitingMeasurement)
+        #expect(state.presentedMode == .compact)
+    }
+
+    @Test func standardTransitionCompletesAfterHeightMeasurement() {
+        var state = OverlayTransitionState(initialMode: .compact)
+
+        state.prepare(for: .standard)
+        #expect(state.isAwaitingMeasurement)
+
+        let completed = state.registerMeasurement(for: .standard, axis: .height)
+        #expect(completed)
+        #expect(!state.isAwaitingMeasurement)
+        #expect(state.presentedMode == .standard)
+    }
+
+    @Test func revertingToPresentedModeCancelsPendingTransition() {
+        var state = OverlayTransitionState()
+
+        state.prepare(for: .compact)
+        #expect(state.isAwaitingMeasurement)
+
+        state.prepare(for: .standard)
+        #expect(!state.isAwaitingMeasurement)
+        #expect(state.presentedMode == .standard)
+    }
+}
+
+@Suite("OverlayPresentationDecision")
+struct OverlayPresentationDecisionTests {
+    @Test func holdsCurrentFrameWhenAwaitingFirstMeasurementForTargetMode() {
+        var transition = OverlayTransitionState()
+        let cache = OverlayMeasurementCache()
+
+        transition.prepare(for: .compact)
+
+        #expect(OverlayPresentationDecision.shouldHoldCurrentFrame(
+            transitionState: transition,
+            cache: cache,
+            targetMode: .compact
+        ))
+    }
+
+    @Test func usesCachedFrameWhileAwaitingFreshMeasurement() {
+        var transition = OverlayTransitionState()
+        var cache = OverlayMeasurementCache()
+
+        _ = cache.applyHeight(188.2, for: .standard)
+        transition.prepare(for: .standard)
+
+        #expect(!OverlayPresentationDecision.shouldHoldCurrentFrame(
+            transitionState: transition,
+            cache: cache,
+            targetMode: .standard
+        ))
+    }
+}
+
+@Suite("OverlayMeasurementRouter")
+struct OverlayMeasurementRouterTests {
+    @Test func ignoresUndersizedCompactMeasurementsDuringTransition() {
+        var cache = OverlayMeasurementCache()
+        var transition = OverlayTransitionState()
+
+        transition.prepare(for: .compact)
+
+        let refreshAfterTinyHeight = OverlayMeasurementRouter.handle(
+            value: 1,
+            mode: .compact,
+            axis: .height,
+            cache: &cache,
+            transitionState: &transition
+        )
+        let refreshAfterTinyWidth = OverlayMeasurementRouter.handle(
+            value: 1,
+            mode: .compact,
+            axis: .width,
+            cache: &cache,
+            transitionState: &transition
+        )
+
+        #expect(!refreshAfterTinyHeight)
+        #expect(!refreshAfterTinyWidth)
+        #expect(transition.isAwaitingMeasurement)
+        #expect(!cache.hasMeasuredSize(for: .compact))
+    }
+
+    @Test func completesCompactTransitionAfterPlausibleMeasurements() {
+        var cache = OverlayMeasurementCache()
+        var transition = OverlayTransitionState()
+
+        transition.prepare(for: .compact)
+
+        let refreshAfterHeight = OverlayMeasurementRouter.handle(
+            value: 36,
+            mode: .compact,
+            axis: .height,
+            cache: &cache,
+            transitionState: &transition
+        )
+        let refreshAfterWidth = OverlayMeasurementRouter.handle(
+            value: 80,
+            mode: .compact,
+            axis: .width,
+            cache: &cache,
+            transitionState: &transition
+        )
+
+        #expect(!refreshAfterHeight)
+        #expect(refreshAfterWidth)
+        #expect(!transition.isAwaitingMeasurement)
+        #expect(transition.presentedMode == .compact)
+        #expect(cache.size(for: .compact) == CGSize(width: 80, height: 36))
+    }
+}
+
+@Suite("OverlayLayoutStateCaching")
+struct OverlayLayoutStateCachingTests {
+    @Test func standardDetailsVisibilityKeepsSeparateHeights() {
+        var cache = OverlayMeasurementCache()
+        let detailsHidden = OverlayLayoutState(mode: .standard, showsEventDetails: false, showsCompactMinutes: false)
+        let detailsShown = OverlayLayoutState(mode: .standard, showsEventDetails: true, showsCompactMinutes: false)
+
+        _ = cache.applyHeight(109.1, for: detailsHidden)
+        _ = cache.applyHeight(188.2, for: detailsShown)
+
+        #expect(cache.size(for: detailsHidden) == CGSize(width: 200, height: 110))
+        #expect(cache.size(for: detailsShown) == CGSize(width: 200, height: 189))
+    }
+
+    @Test func compactDetailsVisibilityKeepsSeparateWidths() {
+        var cache = OverlayMeasurementCache()
+        let detailsHidden = OverlayLayoutState(mode: .compact, showsEventDetails: false, showsCompactMinutes: true)
+        let detailsShown = OverlayLayoutState(mode: .compact, showsEventDetails: true, showsCompactMinutes: true)
+
+        _ = cache.applyHeight(35.2, for: detailsHidden)
+        _ = cache.applyWidth(79.1, for: detailsHidden)
+        _ = cache.applyHeight(35.2, for: detailsShown)
+        _ = cache.applyWidth(187.4, for: detailsShown)
+
+        #expect(cache.size(for: detailsHidden) == CGSize(width: 80, height: 36))
+        #expect(cache.size(for: detailsShown) == CGSize(width: 188, height: 36))
+    }
+}
+
+@Suite("OverlayLayoutStateTransition")
+struct OverlayLayoutStateTransitionTests {
+    @Test func detailsToggleWithinStandardModeStartsPendingTransition() {
+        let detailsHidden = OverlayLayoutState(mode: .standard, showsEventDetails: false, showsCompactMinutes: false)
+        let detailsShown = OverlayLayoutState(mode: .standard, showsEventDetails: true, showsCompactMinutes: false)
+        var transition = OverlayTransitionState(initialState: detailsHidden)
+
+        transition.prepare(for: detailsShown)
+
+        #expect(transition.isAwaitingMeasurement)
+
+        let completed = transition.registerMeasurement(for: detailsShown, axis: .height)
+        #expect(completed)
+        #expect(transition.presentedState == detailsShown)
+    }
+}

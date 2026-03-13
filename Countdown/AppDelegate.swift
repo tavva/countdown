@@ -14,11 +14,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     var overlayPanel: OverlayPanel?
     private var settingsPanel: NSPanel?
-    private var panelTopEdge: CGFloat = 0
-    private var panelX: CGFloat = 0
-    private var contentHeight: CGFloat = 0
-    private var contentWidth: CGFloat = 0
-    private var lastCompactState: Bool = false
+    private var panelPlacement = OverlayFramePlacement(initialFrame: .zero, restoredOrigin: nil)
+    private var measurementCache = OverlayMeasurementCache()
+    private var transitionState = OverlayTransitionState()
 
     func applicationWillFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.prohibited)
@@ -27,17 +25,29 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
 
-        let circleContent = OverlayContent(manager: calendarManager, onContentHeight: { [weak self] height in
-            guard let self, height > 0 else { return }
-            guard OverlayLayout.shouldApplyMeasuredSize(current: self.contentHeight, measured: height) else { return }
-            self.contentHeight = OverlayLayout.normalizedSize(height)
+        let circleContent = OverlayContent(manager: calendarManager, onContentHeight: { [weak self] state, height in
+            guard let self else { return }
+            let shouldRefresh = OverlayMeasurementRouter.handle(
+                value: height,
+                state: state,
+                axis: .height,
+                cache: &self.measurementCache,
+                transitionState: &self.transitionState
+            )
+            guard shouldRefresh else { return }
             DispatchQueue.main.async { [weak self] in
                 self?.updatePanel()
             }
-        }, onContentWidth: { [weak self] width in
-            guard let self, width > 0 else { return }
-            guard OverlayLayout.shouldApplyMeasuredSize(current: self.contentWidth, measured: width) else { return }
-            self.contentWidth = OverlayLayout.normalizedSize(width)
+        }, onContentWidth: { [weak self] state, width in
+            guard let self else { return }
+            let shouldRefresh = OverlayMeasurementRouter.handle(
+                value: width,
+                state: state,
+                axis: .width,
+                cache: &self.measurementCache,
+                transitionState: &self.transitionState
+            )
+            guard shouldRefresh else { return }
             DispatchQueue.main.async { [weak self] in
                 self?.updatePanel()
             }
@@ -59,13 +69,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         panel.onPositionChange = { [weak self] in
             guard let self, let panel = self.overlayPanel else { return }
-            self.panelTopEdge = panel.frame.origin.y + panel.frame.height
-            self.panelX = panel.frame.origin.x
+            self.panelPlacement.record(frame: panel.frame)
         }
         self.overlayPanel = panel
         panel.ensureOnScreen()
-        panelTopEdge = panel.frame.origin.y + panel.frame.height
-        panelX = panel.frame.origin.x
+        let restoredOrigin = OverlayPosition.restore() != nil ? panel.frame.origin : nil
+        panelPlacement = OverlayFramePlacement(initialFrame: panel.frame, restoredOrigin: restoredOrigin)
 
         NotificationCenter.default.addObserver(
             self, selector: #selector(screenDidChange),
@@ -83,8 +92,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func screenDidChange(_ notification: Notification) {
         guard let panel = overlayPanel else { return }
         panel.ensureOnScreen()
-        panelTopEdge = panel.frame.origin.y + panel.frame.height
-        panelX = panel.frame.origin.x
+        panelPlacement.record(frame: panel.frame)
     }
 
     private func observeOverlayState() {
@@ -129,23 +137,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard let panel = overlayPanel else { return }
 
         if calendarManager.model.shouldShowOverlay {
-            let compact = calendarManager.model.compactMode
-            if compact != lastCompactState {
-                contentHeight = 0
-                contentWidth = 0
-                lastCompactState = compact
+            let layoutState = OverlayLayoutState(model: calendarManager.model)
+            transitionState.prepare(for: layoutState)
+            panel.isCompact = layoutState.mode == .compact
+            panel.alphaValue = 1
+
+            if OverlayPresentationDecision.shouldHoldCurrentFrame(
+                transitionState: transitionState,
+                cache: measurementCache,
+                targetState: layoutState
+            ) {
+                panel.ignoresMouseEvents = false
+                panel.orderFront(nil)
+                return
             }
-            // Generous fallbacks avoid clipping during mode transitions;
-            // the measurement callback quickly shrinks the panel to fit.
-            let height: CGFloat = contentHeight > 0 ? contentHeight : (compact ? 36 : 200)
-            let width: CGFloat = compact ? (contentWidth > 0 ? contentWidth : 400) : 200
-            panel.setFrame(NSRect(
-                x: panelX,
-                y: panelTopEdge - height,
-                width: width,
-                height: height
-            ), display: true)
-            panel.isCompact = compact
+
+            let size = measurementCache.size(for: layoutState)
+            panel.setFrame(panelPlacement.frame(for: size), display: true)
+            panelPlacement.record(frame: panel.frame)
 
             panel.ignoresMouseEvents = false
             panel.orderFront(nil)
@@ -157,6 +166,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 }
 
 enum OverlayLayout {
+    static let standardWidth: CGFloat = 200
+    static let standardFallbackHeight: CGFloat = 200
+    static let standardMinimumMeasuredHeight: CGFloat = 110
+    static let compactFallbackWidth: CGFloat = 400
+    static let compactFallbackHeight: CGFloat = 36
+    static let compactMinimumMeasuredWidth: CGFloat = 44
+    static let compactMinimumMeasuredHeight: CGFloat = 36
+
     static func normalizedSize(_ measured: CGFloat) -> CGFloat {
         measured.rounded(.up)
     }
@@ -168,29 +185,298 @@ enum OverlayLayout {
     }
 }
 
+enum OverlayDisplayMode: Equatable {
+    case standard
+    case compact
+}
+
+struct OverlayLayoutState: Hashable, Equatable {
+    let mode: OverlayDisplayMode
+    let showsEventDetails: Bool
+    let showsCompactMinutes: Bool
+
+    init(mode: OverlayDisplayMode, showsEventDetails: Bool, showsCompactMinutes: Bool) {
+        self.mode = mode
+        self.showsEventDetails = showsEventDetails
+        self.showsCompactMinutes = showsCompactMinutes
+    }
+
+    init(model: CountdownModel) {
+        let mode: OverlayDisplayMode = model.compactMode ? .compact : .standard
+        self.mode = mode
+        self.showsEventDetails = model.showingEventDetails && model.displayedEvent != nil
+        self.showsCompactMinutes = mode == .compact && !model.isLoading && !model.isIdle
+    }
+
+    static func defaultState(for mode: OverlayDisplayMode) -> OverlayLayoutState {
+        OverlayLayoutState(mode: mode, showsEventDetails: false, showsCompactMinutes: false)
+    }
+}
+
+enum OverlayMeasurementAxis {
+    case height
+    case width
+}
+
+enum OverlayMeasurementValidation {
+    static func isValid(_ measured: CGFloat, for state: OverlayLayoutState, axis: OverlayMeasurementAxis) -> Bool {
+        isValid(measured, for: state.mode, axis: axis)
+    }
+
+    static func isValid(_ measured: CGFloat, for mode: OverlayDisplayMode, axis: OverlayMeasurementAxis) -> Bool {
+        let normalized = OverlayLayout.normalizedSize(measured)
+        guard normalized > 0 else { return false }
+
+        let minimum: CGFloat
+        switch (mode, axis) {
+        case (.standard, .height):
+            minimum = OverlayLayout.standardMinimumMeasuredHeight
+        case (.standard, .width):
+            minimum = OverlayLayout.standardWidth
+        case (.compact, .height):
+            minimum = OverlayLayout.compactMinimumMeasuredHeight
+        case (.compact, .width):
+            minimum = OverlayLayout.compactMinimumMeasuredWidth
+        }
+
+        return normalized >= minimum
+    }
+}
+
+struct OverlayMeasurementCache {
+    private var heights: [OverlayLayoutState: CGFloat] = [:]
+    private var widths: [OverlayLayoutState: CGFloat] = [:]
+
+    mutating func applyHeight(_ measured: CGFloat, for state: OverlayLayoutState) -> Bool {
+        guard OverlayMeasurementValidation.isValid(measured, for: state, axis: .height) else { return false }
+        let current = heights[state] ?? 0
+        guard OverlayLayout.shouldApplyMeasuredSize(current: current, measured: measured) else { return false }
+
+        heights[state] = OverlayLayout.normalizedSize(measured)
+        return true
+    }
+
+    mutating func applyHeight(_ measured: CGFloat, for mode: OverlayDisplayMode) -> Bool {
+        applyHeight(measured, for: .defaultState(for: mode))
+    }
+
+    mutating func applyWidth(_ measured: CGFloat, for state: OverlayLayoutState) -> Bool {
+        guard state.mode == .compact else { return false }
+        guard OverlayMeasurementValidation.isValid(measured, for: state, axis: .width) else { return false }
+        let current = widths[state] ?? 0
+        guard OverlayLayout.shouldApplyMeasuredSize(current: current, measured: measured) else { return false }
+
+        widths[state] = OverlayLayout.normalizedSize(measured)
+        return true
+    }
+
+    mutating func applyWidth(_ measured: CGFloat, for mode: OverlayDisplayMode) -> Bool {
+        applyWidth(measured, for: .defaultState(for: mode))
+    }
+
+    func hasMeasuredSize(for state: OverlayLayoutState) -> Bool {
+        switch state.mode {
+        case .standard:
+            (heights[state] ?? 0) > 0
+        case .compact:
+            (heights[state] ?? 0) > 0 && (widths[state] ?? 0) > 0
+        }
+    }
+
+    func hasMeasuredSize(for mode: OverlayDisplayMode) -> Bool {
+        hasMeasuredSize(for: .defaultState(for: mode))
+    }
+
+    func size(for state: OverlayLayoutState) -> CGSize {
+        switch state.mode {
+        case .standard:
+            let height = (heights[state] ?? 0) > 0 ? heights[state]! : OverlayLayout.standardFallbackHeight
+            return CGSize(width: OverlayLayout.standardWidth, height: height)
+        case .compact:
+            let width = (widths[state] ?? 0) > 0 ? widths[state]! : OverlayLayout.compactFallbackWidth
+            let height = (heights[state] ?? 0) > 0 ? heights[state]! : OverlayLayout.compactFallbackHeight
+            return CGSize(width: width, height: height)
+        }
+    }
+
+    func size(for mode: OverlayDisplayMode) -> CGSize {
+        size(for: .defaultState(for: mode))
+    }
+}
+
+struct OverlayTransitionState {
+    private(set) var presentedState: OverlayLayoutState
+    private(set) var pendingState: OverlayLayoutState?
+    private var pendingHeightSeen = false
+    private var pendingWidthSeen = false
+
+    init() {
+        self.init(initialState: .defaultState(for: .standard))
+    }
+
+    init(initialState: OverlayLayoutState) {
+        self.presentedState = initialState
+    }
+
+    init(initialMode: OverlayDisplayMode) {
+        self.init(initialState: .defaultState(for: initialMode))
+    }
+
+    mutating func prepare(for targetState: OverlayLayoutState) {
+        if targetState == presentedState {
+            pendingState = nil
+            pendingHeightSeen = false
+            pendingWidthSeen = false
+            return
+        }
+
+        guard pendingState != targetState else { return }
+        pendingState = targetState
+        pendingHeightSeen = false
+        pendingWidthSeen = false
+    }
+
+    mutating func prepare(for targetMode: OverlayDisplayMode) {
+        prepare(for: .defaultState(for: targetMode))
+    }
+
+    mutating func registerMeasurement(for state: OverlayLayoutState, axis: OverlayMeasurementAxis) -> Bool {
+        guard pendingState == state else { return false }
+
+        switch axis {
+        case .height:
+            pendingHeightSeen = true
+        case .width:
+            pendingWidthSeen = true
+        }
+
+        let transitionReady: Bool
+        switch state.mode {
+        case .standard:
+            transitionReady = pendingHeightSeen
+        case .compact:
+            transitionReady = pendingHeightSeen && pendingWidthSeen
+        }
+
+        guard transitionReady else { return false }
+        presentedState = state
+        pendingState = nil
+        pendingHeightSeen = false
+        pendingWidthSeen = false
+        return true
+    }
+
+    mutating func registerMeasurement(for mode: OverlayDisplayMode, axis: OverlayMeasurementAxis) -> Bool {
+        registerMeasurement(for: .defaultState(for: mode), axis: axis)
+    }
+
+    var presentedMode: OverlayDisplayMode {
+        presentedState.mode
+    }
+
+    var pendingMode: OverlayDisplayMode? {
+        pendingState?.mode
+    }
+
+    var isAwaitingMeasurement: Bool {
+        pendingState != nil
+    }
+}
+
+enum OverlayMeasurementRouter {
+    static func handle(
+        value: CGFloat,
+        state: OverlayLayoutState,
+        axis: OverlayMeasurementAxis,
+        cache: inout OverlayMeasurementCache,
+        transitionState: inout OverlayTransitionState
+    ) -> Bool {
+        guard OverlayMeasurementValidation.isValid(value, for: state, axis: axis) else { return false }
+
+        let sizeChanged: Bool
+        switch axis {
+        case .height:
+            sizeChanged = cache.applyHeight(value, for: state)
+        case .width:
+            sizeChanged = cache.applyWidth(value, for: state)
+        }
+
+        let transitionCompleted = transitionState.registerMeasurement(for: state, axis: axis)
+        return transitionCompleted
+            || (sizeChanged && !transitionState.isAwaitingMeasurement && transitionState.presentedState == state)
+    }
+
+    static func handle(
+        value: CGFloat,
+        mode: OverlayDisplayMode,
+        axis: OverlayMeasurementAxis,
+        cache: inout OverlayMeasurementCache,
+        transitionState: inout OverlayTransitionState
+    ) -> Bool {
+        handle(
+            value: value,
+            state: .defaultState(for: mode),
+            axis: axis,
+            cache: &cache,
+            transitionState: &transitionState
+        )
+    }
+}
+
+enum OverlayPresentationDecision {
+    static func shouldHoldCurrentFrame(
+        transitionState: OverlayTransitionState,
+        cache: OverlayMeasurementCache,
+        targetState: OverlayLayoutState
+    ) -> Bool {
+        transitionState.isAwaitingMeasurement && !cache.hasMeasuredSize(for: targetState)
+    }
+
+    static func shouldHoldCurrentFrame(
+        transitionState: OverlayTransitionState,
+        cache: OverlayMeasurementCache,
+        targetMode: OverlayDisplayMode
+    ) -> Bool {
+        shouldHoldCurrentFrame(
+            transitionState: transitionState,
+            cache: cache,
+            targetState: .defaultState(for: targetMode)
+        )
+    }
+}
+
+private struct OverlayMeasurement: Equatable {
+    let state: OverlayLayoutState
+    let value: CGFloat
+}
+
 private struct ContentHeightKey: PreferenceKey {
-    nonisolated(unsafe) static var defaultValue: CGFloat = 0
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = max(value, nextValue())
+    nonisolated(unsafe) static var defaultValue: OverlayMeasurement?
+    static func reduce(value: inout OverlayMeasurement?, nextValue: () -> OverlayMeasurement?) {
+        value = nextValue() ?? value
     }
 }
 
 private struct ContentWidthKey: PreferenceKey {
-    nonisolated(unsafe) static var defaultValue: CGFloat = 0
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = max(value, nextValue())
+    nonisolated(unsafe) static var defaultValue: OverlayMeasurement?
+    static func reduce(value: inout OverlayMeasurement?, nextValue: () -> OverlayMeasurement?) {
+        value = nextValue() ?? value
     }
 }
 
 struct OverlayContent: View {
     @Bindable var manager: CalendarManager
-    var onContentHeight: ((CGFloat) -> Void)?
-    var onContentWidth: ((CGFloat) -> Void)?
+    var onContentHeight: ((OverlayLayoutState, CGFloat) -> Void)?
+    var onContentWidth: ((OverlayLayoutState, CGFloat) -> Void)?
 
     private var timeFormatter: DateFormatter {
         let f = DateFormatter()
         f.dateFormat = "HH:mm"
         return f
+    }
+
+    private var currentLayoutState: OverlayLayoutState {
+        OverlayLayoutState(model: manager.model)
     }
 
     var body: some View {
@@ -203,11 +489,13 @@ struct OverlayContent: View {
                 }
             }
         }
-        .onPreferenceChange(ContentHeightKey.self) { height in
-            onContentHeight?(height)
+        .onPreferenceChange(ContentHeightKey.self) { measurement in
+            guard let measurement else { return }
+            onContentHeight?(measurement.state, measurement.value)
         }
-        .onPreferenceChange(ContentWidthKey.self) { width in
-            onContentWidth?(width)
+        .onPreferenceChange(ContentWidthKey.self) { measurement in
+            guard let measurement else { return }
+            onContentWidth?(measurement.state, measurement.value)
         }
         .background(.clear)
     }
@@ -228,9 +516,12 @@ struct OverlayContent: View {
                 eventDetailsBox(event: event)
             }
         }
-        .frame(width: 200)
+        .frame(width: OverlayLayout.standardWidth)
         .background(GeometryReader { geo in
-            Color.clear.preference(key: ContentHeightKey.self, value: geo.size.height)
+            Color.clear.preference(
+                key: ContentHeightKey.self,
+                value: OverlayMeasurement(state: currentLayoutState, value: geo.size.height)
+            )
         })
         .frame(maxHeight: .infinity, alignment: .top)
     }
@@ -267,9 +558,16 @@ struct OverlayContent: View {
         .background(.black.opacity(0.7), in: Capsule())
         .background(GeometryReader { geo in
             Color.clear
-                .preference(key: ContentHeightKey.self, value: geo.size.height)
-                .preference(key: ContentWidthKey.self, value: geo.size.width)
+                .preference(
+                    key: ContentHeightKey.self,
+                    value: OverlayMeasurement(state: currentLayoutState, value: geo.size.height)
+                )
+                .preference(
+                    key: ContentWidthKey.self,
+                    value: OverlayMeasurement(state: currentLayoutState, value: geo.size.width)
+                )
         })
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     @ViewBuilder

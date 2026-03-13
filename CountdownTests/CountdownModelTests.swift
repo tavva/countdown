@@ -332,6 +332,20 @@ struct CountdownModelTests {
         #expect(model2.showingEventDetails == true)
     }
 
+    @Test func showingEventDetailsChangesAreObservable() {
+        let model = CountdownModel()
+        let changes = ChangeBox()
+
+        withObservationTracking {
+            _ = model.showingEventDetails
+        } onChange: {
+            changes.value += 1
+        }
+
+        model.toggleEventDetails()
+        #expect(changes.value == 1)
+    }
+
     @Test func showingEventDetailsSurvivesEventChange() {
         let model = CountdownModel()
         model.showingEventDetails = false
@@ -544,6 +558,20 @@ struct CountdownModelTests {
         model.toggleCompactMode()
         #expect(model.compactMode == false)
     }
+
+    @Test func compactModeChangesAreObservable() {
+        let model = CountdownModel()
+        let changes = ChangeBox()
+
+        withObservationTracking {
+            _ = model.compactMode
+        } onChange: {
+            changes.value += 1
+        }
+
+        model.toggleCompactMode()
+        #expect(changes.value == 1)
+    }
 }
 
 // MARK: - Test helper
@@ -572,4 +600,8 @@ final class DefaultsSnapshot {
             }
         }
     }
+}
+
+final class ChangeBox: @unchecked Sendable {
+    var value: Int = 0
 }

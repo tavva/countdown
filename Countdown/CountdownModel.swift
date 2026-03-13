@@ -6,19 +6,16 @@ import Observation
 
 @Observable
 final class CountdownModel {
+    private let defaults: UserDefaults
+
     var nextEvent: CalendarEvent?
     var displayedEvent: CalendarEvent? { isIdle ? nil : nextEvent }
     var meetingsOnly: Bool {
-        get { UserDefaults.standard.bool(forKey: "meetingsOnly") }
-        set { UserDefaults.standard.set(newValue, forKey: "meetingsOnly") }
+        didSet { defaults.set(meetingsOnly, forKey: DefaultsKey.meetingsOnly) }
     }
 
     var alwaysShowCircle: Bool {
-        get {
-            if UserDefaults.standard.object(forKey: "alwaysShowCircle") == nil { return true }
-            return UserDefaults.standard.bool(forKey: "alwaysShowCircle")
-        }
-        set { UserDefaults.standard.set(newValue, forKey: "alwaysShowCircle") }
+        didSet { defaults.set(alwaysShowCircle, forKey: DefaultsKey.alwaysShowCircle) }
     }
 
     private(set) var shouldShowOverlay: Bool = true
@@ -29,20 +26,31 @@ final class CountdownModel {
     private(set) var isLoading: Bool = true
     private(set) var ringProgress: Double = 0.0  // 0 = no ring, 1 = full ring
     var compactMode: Bool {
-        get { UserDefaults.standard.bool(forKey: "compactMode") }
-        set { UserDefaults.standard.set(newValue, forKey: "compactMode") }
+        didSet { defaults.set(compactMode, forKey: DefaultsKey.compactMode) }
     }
 
     var showingEventDetails: Bool {
-        get {
-            if UserDefaults.standard.object(forKey: "showingEventDetails") == nil { return true }
-            return UserDefaults.standard.bool(forKey: "showingEventDetails")
-        }
-        set { UserDefaults.standard.set(newValue, forKey: "showingEventDetails") }
+        didSet { defaults.set(showingEventDetails, forKey: DefaultsKey.showingEventDetails) }
     }
 
     private var dismissedEventID: String?
     private var flashAcknowledgedEventID: String?
+
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+        self.meetingsOnly = defaults.bool(forKey: DefaultsKey.meetingsOnly)
+        if defaults.object(forKey: DefaultsKey.alwaysShowCircle) == nil {
+            self.alwaysShowCircle = true
+        } else {
+            self.alwaysShowCircle = defaults.bool(forKey: DefaultsKey.alwaysShowCircle)
+        }
+        self.compactMode = defaults.bool(forKey: DefaultsKey.compactMode)
+        if defaults.object(forKey: DefaultsKey.showingEventDetails) == nil {
+            self.showingEventDetails = true
+        } else {
+            self.showingEventDetails = defaults.bool(forKey: DefaultsKey.showingEventDetails)
+        }
+    }
 
     func setEvents(_ events: [CalendarEvent]) {
         isLoading = false
@@ -130,4 +138,11 @@ final class CountdownModel {
         shouldShowOverlay = false
         isFlashing = false
     }
+}
+
+private enum DefaultsKey {
+    static let meetingsOnly = "meetingsOnly"
+    static let alwaysShowCircle = "alwaysShowCircle"
+    static let compactMode = "compactMode"
+    static let showingEventDetails = "showingEventDetails"
 }
