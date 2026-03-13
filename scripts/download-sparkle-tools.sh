@@ -4,8 +4,8 @@
 
 set -euo pipefail
 
-SPARKLE_VERSION="2.7.5"
 TOOLS_DIR="$(dirname "$0")/sparkle-tools"
+SPARKLE_VERSION=$(gh release view --repo sparkle-project/Sparkle --json tagName -q .tagName)
 SPARKLE_URL="https://github.com/sparkle-project/Sparkle/releases/download/${SPARKLE_VERSION}/Sparkle-${SPARKLE_VERSION}.tar.xz"
 
 if [ -d "$TOOLS_DIR/bin" ]; then
