@@ -20,5 +20,11 @@
 	<string>1</string>
 	<key>LSUIElement</key>
 	<true/>
+	<key>SUFeedURL</key>
+	<string>https://tavva.github.io/countdown/appcast.xml</string>
+	<key>SUEnableAutomaticChecks</key>
+	<true/>
+	<key>SUPublicEDKey</key>
+	<string>nT9yOEpXACVlDmRZXGGXjQWNNp38iwH4V3OOJyjNlsc=</string>
 </dict>
 </plist>
