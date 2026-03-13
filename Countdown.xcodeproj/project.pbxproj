@@ -29,6 +29,7 @@
 		C4785A606F09912FD39A5069 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 335AFBC57255775C13E7C464 /* Config.swift */; };
 		CA05675B1B218B2AF757927B /* OverlayPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7542D4CDF1AC93678FAE3574 /* OverlayPanel.swift */; };
 		CCDAA23C0262D94C6D01B73A /* Config.plist in Resources */ = {isa = PBXBuildFile; fileRef = D39B9B347455AA7C2594B879 /* Config.plist */; };
+		D6047097A852A86D30A45076 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = CA9C2BE71A3E43E68A1D4497 /* Sparkle */; };
 		D665777B4809371D8A144501 /* Config.plist.template in Resources */ = {isa = PBXBuildFile; fileRef = 11F8974166F1B12ECFD9F7F8 /* Config.plist.template */; };
 		D676ECABA4C15FEBEA004AEF /* ConfigTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE2B7F4112F14648B7DC7FC1 /* ConfigTests.swift */; };
 		E975249DE1F850E94AB2E371 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AE0899F7EBADCD899D9ED8B /* AppDelegate.swift */; };
@@ -83,6 +84,17 @@
 		F0AEC5FD2D7555FDDD7B4F7D /* CalendarClientTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarClientTests.swift; sourceTree = "<group>"; };
 		F2A473736B067B3F95F414E2 /* CountdownModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CountdownModel.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		7AD0BE5E093303003C32947B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D6047097A852A86D30A45076 /* Sparkle in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		16571EA7FF48511E403E25A7 /* CountdownTests */ = {
@@ -157,6 +169,7 @@
 			buildPhases = (
 				D184F2883CD2CA13ECC93729 /* Sources */,
 				60B9A2E843439483B2D47458 /* Resources */,
+				7AD0BE5E093303003C32947B /* Frameworks */,
 			);
 			buildRules = (
 			);
@@ -164,6 +177,7 @@
 			);
 			name = Countdown;
 			packageProductDependencies = (
+				CA9C2BE71A3E43E68A1D4497 /* Sparkle */,
 			);
 			productName = Countdown;
 			productReference = 8D17595884028CBBF2DDCC58 /* Countdown.app */;
@@ -206,6 +220,9 @@
 			);
 			mainGroup = 333E407D1DC678EBD9A5553D;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				D071C486AC6B4744A6ABC328 /* XCRemoteSwiftPackageReference "Sparkle" */,
+			);
 			preferredProjectObjectVersion = 77;
 			projectDirPath = "";
 			projectRoot = "";
@@ -501,6 +518,25 @@
 			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		D071C486AC6B4744A6ABC328 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		CA9C2BE71A3E43E68A1D4497 /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D071C486AC6B4744A6ABC328 /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 9207444C73EA95B3F6AD2178 /* Project object */;
 }

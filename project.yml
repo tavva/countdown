@@ -8,6 +8,10 @@ options:
   bundleIdPrefix: com.countdown
 settings:
   SWIFT_VERSION: "6.0"
+packages:
+  Sparkle:
+    url: https://github.com/sparkle-project/Sparkle
+    from: "2.0.0"
 targets:
   Countdown:
     type: application
@@ -29,6 +33,8 @@ targets:
       properties:
         com.apple.security.network.client: true
         com.apple.security.network.server: true
+    dependencies:
+      - package: Sparkle
   CountdownTests:
     type: bundle.unit-test
     platform: macOS
