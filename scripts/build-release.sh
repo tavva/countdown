@@ -92,6 +92,64 @@ xcrun notarytool submit "$DMG_PATH" \
 echo "==> Stapling..."
 xcrun stapler staple "$DMG_PATH"
 
+echo "==> Signing DMG with EdDSA..."
+SPARKLE_TOOLS="$(dirname "$0")/sparkle-tools/bin"
+if [ ! -f "$SPARKLE_TOOLS/sign_update" ]; then
+  echo "Error: Sparkle tools not found. Run scripts/download-sparkle-tools.sh first."
+  exit 1
+fi
+EDDSA_SIGNATURE=$("$SPARKLE_TOOLS/sign_update" "$DMG_PATH")
+DMG_SIZE=$(stat -f%z "$DMG_PATH")
+
+echo "==> Updating appcast..."
+APPCAST_DIR="$BUILD_DIR/appcast-work"
+git worktree add "$APPCAST_DIR" gh-pages
+APPCAST_FILE="$APPCAST_DIR/appcast.xml"
+
+PUB_DATE=$(date -R)
+DMG_URL="https://github.com/tavva/countdown/releases/download/${TAG}/Countdown-${VERSION}.dmg"
+
+# Create appcast if it doesn't exist
+if [ ! -f "$APPCAST_FILE" ]; then
+cat > "$APPCAST_FILE" << 'APPCAST_HEADER'
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <channel>
+    <title>Countdown Updates</title>
+  </channel>
+</rss>
+APPCAST_HEADER
+fi
+
+# Build the new item XML
+NEW_ITEM=$(cat << ITEM_EOF
+    <item>
+      <title>Version ${VERSION}</title>
+      <pubDate>${PUB_DATE}</pubDate>
+      <sparkle:version>${VERSION}</sparkle:version>
+      <sparkle:shortVersionString>${VERSION}</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <enclosure url="${DMG_URL}"
+                 type="application/octet-stream"
+                 ${EDDSA_SIGNATURE}
+                 length="${DMG_SIZE}" />
+    </item>
+ITEM_EOF
+)
+
+# Insert new item before </channel>
+awk -v item="$NEW_ITEM" '/<\/channel>/ { print item } { print }' "$APPCAST_FILE" > "$APPCAST_FILE.tmp"
+mv "$APPCAST_FILE.tmp" "$APPCAST_FILE"
+
+# Commit and push appcast
+cd "$APPCAST_DIR"
+git add appcast.xml
+git commit -m "Update appcast for ${TAG}"
+git push origin gh-pages
+cd -
+
+git worktree remove "$APPCAST_DIR"
+
 echo "==> Tagging $TAG..."
 git tag "$TAG"
 git push origin "$TAG"
