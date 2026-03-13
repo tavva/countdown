@@ -120,8 +120,9 @@ cat > "$APPCAST_FILE" << 'APPCAST_HEADER'
 APPCAST_HEADER
 fi
 
-# Build the new item XML
-NEW_ITEM=$(cat << ITEM_EOF
+# Write new item to temp file
+ITEM_FILE="$BUILD_DIR/appcast-item.xml"
+cat > "$ITEM_FILE" << ITEM_EOF
     <item>
       <title>Version ${VERSION}</title>
       <pubDate>${PUB_DATE}</pubDate>
@@ -133,11 +134,12 @@ NEW_ITEM=$(cat << ITEM_EOF
                  ${EDDSA_SIGNATURE} />
     </item>
 ITEM_EOF
-)
 
 # Insert new item before </channel>
-awk -v item="$NEW_ITEM" '/<\/channel>/ { print item } { print }' "$APPCAST_FILE" > "$APPCAST_FILE.tmp"
+CLOSE_LINE=$(grep -n '</channel>' "$APPCAST_FILE" | head -1 | cut -d: -f1)
+{ head -n $((CLOSE_LINE - 1)) "$APPCAST_FILE"; cat "$ITEM_FILE"; tail -n +$CLOSE_LINE "$APPCAST_FILE"; } > "$APPCAST_FILE.tmp"
 mv "$APPCAST_FILE.tmp" "$APPCAST_FILE"
+rm "$ITEM_FILE"
 
 # Commit and push appcast
 cd "$APPCAST_DIR"
