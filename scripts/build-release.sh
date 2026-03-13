@@ -99,7 +99,6 @@ if [ ! -f "$SPARKLE_TOOLS/sign_update" ]; then
   exit 1
 fi
 EDDSA_SIGNATURE=$("$SPARKLE_TOOLS/sign_update" "$DMG_PATH")
-DMG_SIZE=$(stat -f%z "$DMG_PATH")
 
 echo "==> Updating appcast..."
 APPCAST_DIR="$BUILD_DIR/appcast-work"
@@ -131,8 +130,7 @@ NEW_ITEM=$(cat << ITEM_EOF
       <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
       <enclosure url="${DMG_URL}"
                  type="application/octet-stream"
-                 ${EDDSA_SIGNATURE}
-                 length="${DMG_SIZE}" />
+                 ${EDDSA_SIGNATURE} />
     </item>
 ITEM_EOF
 )
