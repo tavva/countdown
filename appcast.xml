@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <channel>
+    <title>Countdown Updates</title>
+    <item>
+      <title>Version 1.3.0</title>
+      <pubDate>Fri, 13 Mar 2026 09:28:11 +0000</pubDate>
+      <sparkle:version>1.3.0</sparkle:version>
+      <sparkle:shortVersionString>1.3.0</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <enclosure url="https://github.com/tavva/countdown/releases/download/v1.3.0/Countdown-1.3.0.dmg"
+                 type="application/octet-stream"
+                 sparkle:edSignature="PaUY0RlZFuwjtKUOZkaJr3g3m9gU9jrftxgGAK1e8zckA60XxC437hybjhr2cEEqp0T5ISIeVaFGPH7tNGpVDA==" length="3239106" />
+    </item>
+  </channel>
+</rss>
