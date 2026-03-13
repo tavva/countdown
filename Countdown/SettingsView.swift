@@ -6,6 +6,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @Bindable var manager: CalendarManager
+    let updateManager: UpdateManager
 
     var body: some View {
         ScrollView {
@@ -29,6 +30,11 @@ struct SettingsView: View {
 
                 Toggle("Launch at login", isOn: launchAtLoginBinding)
                     .toggleStyle(.switch)
+
+                Button("Check for Updates…") {
+                    updateManager.checkForUpdates()
+                }
+                .disabled(!updateManager.canCheckForUpdates)
 
                 HStack {
                     Text("Google Calendar is a trademark of Google LLC")

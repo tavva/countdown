@@ -125,7 +125,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             defer: false
         )
         panel.title = "Countdown Settings"
-        panel.contentView = NSHostingView(rootView: SettingsView(manager: calendarManager))
+        panel.contentView = NSHostingView(rootView: SettingsView(manager: calendarManager, updateManager: updateManager))
         panel.center()
         panel.isReleasedWhenClosed = false
         panel.makeKeyAndOrderFront(nil)

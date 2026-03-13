@@ -9,7 +9,7 @@ struct CountdownApp: App {
 
     var body: some Scene {
         MenuBarExtra {
-            SettingsView(manager: appDelegate.calendarManager)
+            SettingsView(manager: appDelegate.calendarManager, updateManager: appDelegate.updateManager)
         } label: {
             Image(systemName: "circle.fill")
                 .foregroundStyle(appDelegate.calendarManager.model.shouldShowOverlay ? .red : .gray)
