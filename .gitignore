@@ -12,3 +12,6 @@ build/
 
 # OAuth credentials (user-specific)
 Countdown/Config.plist
+
+# Sparkle CLI tools (downloaded binary)
+scripts/sparkle-tools/
