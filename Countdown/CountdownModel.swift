@@ -10,6 +10,7 @@ final class CountdownModel {
 
     var nextEvent: CalendarEvent?
     var displayedEvent: CalendarEvent? { isIdle ? nil : nextEvent }
+    var shouldShowEmptyMessage: Bool { isIdle && !isLoading && showingEventDetails }
     var meetingsOnly: Bool {
         didSet { defaults.set(meetingsOnly, forKey: DefaultsKey.meetingsOnly) }
     }

@@ -533,6 +533,48 @@ struct CountdownModelTests {
         #expect(model.ringProgress == 0.0)
     }
 
+    // MARK: - Empty message
+
+    @Test func showsEmptyMessageWhenIdleWithDetailsOn() {
+        let model = CountdownModel()
+        model.setEvents([])
+        model.alwaysShowCircle = true
+        model.showingEventDetails = true
+        model.updateState()
+        #expect(model.shouldShowEmptyMessage == true)
+    }
+
+    @Test func hidesEmptyMessageWhenDetailsOff() {
+        let model = CountdownModel()
+        model.setEvents([])
+        model.alwaysShowCircle = true
+        model.showingEventDetails = false
+        model.updateState()
+        #expect(model.shouldShowEmptyMessage == false)
+    }
+
+    @Test func hidesEmptyMessageWhenEventActive() {
+        let model = CountdownModel()
+        model.setEvents([])
+        model.showingEventDetails = true
+        model.nextEvent = CalendarEvent(
+            id: "1",
+            summary: "Standup",
+            startTime: Date().addingTimeInterval(30 * 60),
+            endTime: Date().addingTimeInterval(60 * 60),
+            hasOtherAttendees: true
+        )
+        model.updateState()
+        #expect(model.shouldShowEmptyMessage == false)
+    }
+
+    @Test func hidesEmptyMessageWhileLoading() {
+        let model = CountdownModel()
+        model.showingEventDetails = true
+        #expect(model.isLoading == true)
+        #expect(model.shouldShowEmptyMessage == false)
+    }
+
     // MARK: - Compact mode
 
     @Test func compactModeDefaultsToFalse() {

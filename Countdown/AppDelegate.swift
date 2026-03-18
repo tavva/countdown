@@ -515,6 +515,8 @@ struct OverlayContent: View {
 
             if manager.model.showingEventDetails, let event = manager.model.displayedEvent {
                 eventDetailsBox(event: event)
+            } else if manager.model.shouldShowEmptyMessage {
+                emptyMessageBox()
             }
         }
         .frame(width: OverlayLayout.standardWidth)
@@ -551,6 +553,11 @@ struct OverlayContent: View {
                     .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(.white.opacity(0.9))
                     .lineLimit(1)
+            } else if manager.model.shouldShowEmptyMessage {
+                Text("No upcoming meetings")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.7))
+                    .lineLimit(1)
             }
         }
         .padding(.horizontal, 8)
@@ -569,6 +576,16 @@ struct OverlayContent: View {
                 )
         })
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    @ViewBuilder
+    private func emptyMessageBox() -> some View {
+        Text("No upcoming meetings")
+            .font(.system(size: 12, weight: .medium))
+            .foregroundStyle(.white.opacity(0.7))
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(.black.opacity(0.7), in: RoundedRectangle(cornerRadius: 8))
     }
 
     @ViewBuilder
