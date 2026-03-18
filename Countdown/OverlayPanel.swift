@@ -25,6 +25,30 @@ enum OverlayPosition {
         let centre = CGPoint(x: origin.x + panelSize.width / 2, y: origin.y + panelSize.height / 2)
         return screenFrames.contains { $0.contains(centre) }
     }
+
+    static func clampedOrigin(origin: CGPoint, panelSize: CGSize, screenFrames: [CGRect]) -> CGPoint? {
+        let centre = CGPoint(x: origin.x + panelSize.width / 2, y: origin.y + panelSize.height / 2)
+        if screenFrames.contains(where: { $0.contains(centre) }) { return nil }
+        guard !screenFrames.isEmpty else { return nil }
+
+        let nearestScreen = screenFrames.min(by: {
+            distanceSquared(from: centre, to: $0) < distanceSquared(from: centre, to: $1)
+        })!
+
+        let clampedCentreX = min(max(centre.x, nearestScreen.minX), nearestScreen.maxX)
+        let clampedCentreY = min(max(centre.y, nearestScreen.minY), nearestScreen.maxY)
+
+        return CGPoint(
+            x: clampedCentreX - panelSize.width / 2,
+            y: clampedCentreY - panelSize.height / 2
+        )
+    }
+
+    private static func distanceSquared(from point: CGPoint, to rect: CGRect) -> CGFloat {
+        let dx = max(rect.minX - point.x, 0, point.x - rect.maxX)
+        let dy = max(rect.minY - point.y, 0, point.y - rect.maxY)
+        return dx * dx + dy * dy
+    }
 }
 
 struct OverlayFramePlacement {
@@ -205,8 +229,8 @@ final class OverlayPanel: NSPanel {
 
     func ensureOnScreen() {
         let screenFrames = NSScreen.screens.map(\.frame)
-        if !OverlayPosition.isVisible(origin: frame.origin, panelSize: frame.size, screenFrames: screenFrames) {
-            positionTopLeft()
+        if let clamped = OverlayPosition.clampedOrigin(origin: frame.origin, panelSize: frame.size, screenFrames: screenFrames) {
+            setFrameOrigin(clamped)
             OverlayPosition.save(frame.origin)
         }
     }

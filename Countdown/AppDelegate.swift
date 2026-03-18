@@ -155,6 +155,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
             let size = measurementCache.size(for: layoutState)
             panel.setFrame(panelPlacement.frame(for: size), display: true)
+            panel.ensureOnScreen()
             panelPlacement.record(frame: panel.frame)
 
             panel.ignoresMouseEvents = false

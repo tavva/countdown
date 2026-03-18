@@ -71,6 +71,84 @@ struct OverlayPositionTests {
         // Panel centre at x: 2000 — off screen
         #expect(!OverlayPosition.isVisible(origin: CGPoint(x: 1900, y: 500), panelSize: CGSize(width: 200, height: 120), screenFrames: screens))
     }
+
+    // MARK: - Screen clamping
+
+    @Test func clampReturnsNilWhenAlreadyOnScreen() {
+        let screens = [CGRect(x: 0, y: 0, width: 1920, height: 1080)]
+        let result = OverlayPosition.clampedOrigin(
+            origin: CGPoint(x: 100, y: 100),
+            panelSize: CGSize(width: 200, height: 120),
+            screenFrames: screens
+        )
+        #expect(result == nil)
+    }
+
+    @Test func clampNudgesRightOverflowBackOnScreen() {
+        let screens = [CGRect(x: 0, y: 0, width: 1920, height: 1080)]
+        // Panel origin at x:1900, centre at x:2000 — off the right edge
+        let result = OverlayPosition.clampedOrigin(
+            origin: CGPoint(x: 1900, y: 500),
+            panelSize: CGSize(width: 200, height: 120),
+            screenFrames: screens
+        )
+        #expect(result != nil)
+        // Centre should be clamped to screen edge, so origin.x = 1920 - 100 = 1820
+        #expect(result!.x == 1820)
+        #expect(result!.y == 500)
+    }
+
+    @Test func clampNudgesBottomOverflowBackOnScreen() {
+        let screens = [CGRect(x: 0, y: 0, width: 1920, height: 1080)]
+        // Panel origin at y:-100, centre at y:-40 — below screen bottom (macOS y=0 is bottom)
+        let result = OverlayPosition.clampedOrigin(
+            origin: CGPoint(x: 100, y: -100),
+            panelSize: CGSize(width: 200, height: 120),
+            screenFrames: screens
+        )
+        #expect(result != nil)
+        #expect(result!.x == 100)
+        // Centre clamped to y=0, so origin.y = 0 - 60 = -60
+        #expect(result!.y == -60)
+    }
+
+    @Test func clampNudgesToNearestScreen() {
+        let screens = [
+            CGRect(x: 0, y: 0, width: 1920, height: 1080),
+            CGRect(x: 1920, y: 0, width: 2560, height: 1440),
+        ]
+        // Panel centre off the right edge of screen 2 (x: 4480 + 100 = 4580)
+        let result = OverlayPosition.clampedOrigin(
+            origin: CGPoint(x: 4480, y: 500),
+            panelSize: CGSize(width: 200, height: 120),
+            screenFrames: screens
+        )
+        #expect(result != nil)
+        // Should clamp to screen 2's right edge: 1920 + 2560 = 4480, centre at 4480, origin = 4380
+        #expect(result!.x == 4380)
+    }
+
+    @Test func clampReturnsNilWithNoScreens() {
+        let result = OverlayPosition.clampedOrigin(
+            origin: CGPoint(x: 100, y: 100),
+            panelSize: CGSize(width: 200, height: 120),
+            screenFrames: []
+        )
+        #expect(result == nil)
+    }
+
+    @Test func clampHandlesCornerOverflow() {
+        let screens = [CGRect(x: 0, y: 0, width: 1920, height: 1080)]
+        // Both x and y off-screen (bottom-right corner)
+        let result = OverlayPosition.clampedOrigin(
+            origin: CGPoint(x: 1900, y: -100),
+            panelSize: CGSize(width: 200, height: 120),
+            screenFrames: screens
+        )
+        #expect(result != nil)
+        #expect(result!.x == 1820)
+        #expect(result!.y == -60)
+    }
 }
 
 @Suite("OverlayLayout")
