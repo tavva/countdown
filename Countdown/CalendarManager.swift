@@ -9,7 +9,7 @@ import Observation
 final class CalendarManager {
     let model = CountdownModel()
 
-    private(set) var isSignedIn: Bool = false
+    var isSignedIn: Bool = false
     private(set) var userEmail: String?
     private(set) var errorMessage: String?
     private(set) var calendars: [CalendarInfo] = []
@@ -25,19 +25,22 @@ final class CalendarManager {
         }
     }
 
-    private let calendarClient = CalendarClient()
+    private let calendarClient: CalendarClient
+    private let session: URLSession
     private let keychainService = "com.countdown.google-oauth"
     private let keychainAccount = "tokens"
 
-    private var refreshToken: String?
-    private var accessToken: String?
-    private var tokenExpiry: Date?
+    var refreshToken: String?
+    var accessToken: String?
+    var tokenExpiry: Date?
     private var pollingTimer: Timer?
     private var stateTimer: Timer?
 
     var config: Config?
 
-    init() {
+    init(session: URLSession = .shared) {
+        self.session = session
+        self.calendarClient = CalendarClient(session: session)
         loadStoredTokens()
     }
 
@@ -150,7 +153,7 @@ final class CalendarManager {
         }
     }
 
-    private func fetchEvents() async {
+    func fetchEvents(isRetry: Bool = false) async {
         guard let config else { return }
 
         do {
@@ -190,7 +193,15 @@ final class CalendarManager {
             model.setEvents(filtered)
             model.updateState()
             errorMessage = nil
+        } catch CalendarClientError.unauthorised where !isRetry {
+            accessToken = nil
+            tokenExpiry = nil
+            await fetchEvents(isRetry: true)
         } catch CalendarClientError.unauthorised {
+            isSignedIn = false
+            errorMessage = "Session expired. Please sign in again."
+            stopPolling()
+        } catch is GoogleAuthError {
             isSignedIn = false
             errorMessage = "Session expired. Please sign in again."
             stopPolling()
@@ -213,7 +224,8 @@ final class CalendarManager {
         let refreshed = try await GoogleAuth.refreshAccessToken(
             refreshToken: refresh,
             clientID: config.clientID,
-            clientSecret: config.clientSecret
+            clientSecret: config.clientSecret,
+            session: session
         )
 
         accessToken = refreshed.accessToken
