@@ -121,11 +121,6 @@ final class CalendarManager {
         poll()
     }
 
-    func setAlwaysShowCircle(_ value: Bool) {
-        model.alwaysShowCircle = value
-        model.updateState()
-    }
-
     // MARK: - Polling
 
     func startPolling(skipInitialFetch: Bool = false) {

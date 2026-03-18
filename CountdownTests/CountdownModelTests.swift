@@ -8,7 +8,7 @@ import Foundation
 @Suite("CountdownModel", .serialized)
 struct CountdownModelTests {
     private let _snapshot = DefaultsSnapshot(keys: [
-        "meetingsOnly", "alwaysShowCircle", "showingEventDetails", "compactMode",
+        "meetingsOnly", "showingEventDetails", "compactMode",
     ])
 
     // MARK: - Loading state
@@ -25,13 +25,6 @@ struct CountdownModelTests {
         #expect(model.isLoading == false)
     }
 
-    @Test func loadingStateShowsOverlayRegardlessOfAlwaysShowCircle() {
-        let model = CountdownModel()
-        model.alwaysShowCircle = false
-        #expect(model.isLoading == true)
-        #expect(model.shouldShowOverlay == true)
-    }
-
     @Test func updateStateDuringLoadingKeepsLoadingVisible() {
         let model = CountdownModel()
         model.updateState()
@@ -42,29 +35,18 @@ struct CountdownModelTests {
 
     // MARK: - Idle state
 
-    @Test func noEventShowsIdleWhenAlwaysShowCircle() {
+    @Test func noEventShowsIdle() {
         let model = CountdownModel()
         model.setEvents([])
-        model.alwaysShowCircle = true
         model.updateState()
         #expect(model.shouldShowOverlay == true)
         #expect(model.isIdle == true)
         #expect(model.isFlashing == false)
     }
 
-    @Test func noEventHiddenWhenNotAlwaysShowCircle() {
-        let model = CountdownModel()
-        model.setEvents([])
-        model.alwaysShowCircle = false
-        model.updateState()
-        #expect(model.shouldShowOverlay == false)
-        #expect(model.isIdle == false)
-    }
-
     @Test func eventWithinWindowClearsIdleState() {
         let model = CountdownModel()
         model.setEvents([])
-        model.alwaysShowCircle = true
         model.nextEvent = CalendarEvent(
             id: "1",
             summary: "Standup",
@@ -77,10 +59,9 @@ struct CountdownModelTests {
         #expect(model.isIdle == false)
     }
 
-    @Test func filteredEventShowsIdleWhenAlwaysShowCircle() {
+    @Test func filteredEventShowsIdle() {
         let model = CountdownModel()
         model.setEvents([])
-        model.alwaysShowCircle = true
         model.meetingsOnly = true
         model.nextEvent = CalendarEvent(
             id: "1",
@@ -97,7 +78,6 @@ struct CountdownModelTests {
     @Test func displayedEventIsNilWhenFilteredByMeetingsOnly() {
         let model = CountdownModel()
         model.setEvents([])
-        model.alwaysShowCircle = true
         model.meetingsOnly = true
         model.nextEvent = CalendarEvent(
             id: "1",
@@ -129,15 +109,8 @@ struct CountdownModelTests {
     @Test func displayedEventIsNilWhenNoEvents() {
         let model = CountdownModel()
         model.setEvents([])
-        model.alwaysShowCircle = true
         model.updateState()
         #expect(model.displayedEvent == nil)
-    }
-
-    @Test func alwaysShowCircleDefaultsToTrue() {
-        UserDefaults.standard.removeObject(forKey: "alwaysShowCircle")
-        let model = CountdownModel()
-        #expect(model.alwaysShowCircle == true)
     }
 
     @Test func eventWithin60MinutesShowsOverlay() {
@@ -227,10 +200,9 @@ struct CountdownModelTests {
         #expect(model.minutesRemaining == 0)
     }
 
-    @Test func stopsFlashingAfter5MinutesPastStart() {
+    @Test func idlesAfter5MinutesPastStart() {
         let model = CountdownModel()
         model.setEvents([])
-        model.alwaysShowCircle = false
         model.nextEvent = CalendarEvent(
             id: "1",
             summary: "Meeting",
@@ -239,7 +211,9 @@ struct CountdownModelTests {
             hasOtherAttendees: true
         )
         model.updateState()
-        #expect(model.shouldShowOverlay == false)
+        #expect(model.shouldShowOverlay == true)
+        #expect(model.isIdle == true)
+        #expect(model.isFlashing == false)
     }
 
     @Test func clickDismissesCurrentEvent() {
@@ -262,7 +236,6 @@ struct CountdownModelTests {
     @Test func meetingsOnlyFilterExcludesSoloEvents() {
         let model = CountdownModel()
         model.setEvents([])
-        model.alwaysShowCircle = false
         model.meetingsOnly = true
         model.nextEvent = CalendarEvent(
             id: "1",
@@ -272,7 +245,8 @@ struct CountdownModelTests {
             hasOtherAttendees: false
         )
         model.updateState()
-        #expect(model.shouldShowOverlay == false)
+        #expect(model.shouldShowOverlay == true)
+        #expect(model.isIdle == true)
     }
 
     @Test func meetingsOnlyFilterIncludesMeetings() {
@@ -528,7 +502,7 @@ struct CountdownModelTests {
     @Test func ringProgressIsZeroWhenIdle() {
         let model = CountdownModel()
         model.setEvents([])
-        model.alwaysShowCircle = true
+
         model.updateState()
         #expect(model.ringProgress == 0.0)
     }
@@ -538,7 +512,7 @@ struct CountdownModelTests {
     @Test func showsEmptyMessageWhenIdleWithDetailsOn() {
         let model = CountdownModel()
         model.setEvents([])
-        model.alwaysShowCircle = true
+
         model.showingEventDetails = true
         model.updateState()
         #expect(model.shouldShowEmptyMessage == true)
@@ -547,7 +521,7 @@ struct CountdownModelTests {
     @Test func hidesEmptyMessageWhenDetailsOff() {
         let model = CountdownModel()
         model.setEvents([])
-        model.alwaysShowCircle = true
+
         model.showingEventDetails = false
         model.updateState()
         #expect(model.shouldShowEmptyMessage == false)

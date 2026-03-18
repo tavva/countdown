@@ -8,13 +8,12 @@ import Foundation
 @Suite("CalendarManager", .serialized)
 struct CalendarManagerTests {
     private let _snapshot = DefaultsSnapshot(keys: [
-        "meetingsOnly", "alwaysShowCircle", "enabledCalendarIDs",
+        "meetingsOnly", "enabledCalendarIDs",
     ])
 
     @Test @MainActor func setMeetingsOnlyUpdatesOverlayImmediately() {
         let manager = CalendarManager()
         manager.model.setEvents([])
-        manager.model.alwaysShowCircle = false
         manager.model.meetingsOnly = false
         manager.model.nextEvent = CalendarEvent(
             id: "1",
@@ -25,17 +24,18 @@ struct CalendarManagerTests {
         )
         manager.model.updateState()
         #expect(manager.model.shouldShowOverlay == true)
+        #expect(manager.model.isIdle == false)
 
         manager.setMeetingsOnly(true)
 
         #expect(manager.model.meetingsOnly == true)
-        #expect(manager.model.shouldShowOverlay == false)
+        #expect(manager.model.shouldShowOverlay == true)
+        #expect(manager.model.isIdle == true)
     }
 
     @Test @MainActor func signOutClearsCountdownState() async {
         let manager = CalendarManager()
         manager.model.setEvents([])
-        manager.model.alwaysShowCircle = false
         manager.model.nextEvent = CalendarEvent(
             id: "1",
             summary: "Meeting",
@@ -50,13 +50,13 @@ struct CalendarManagerTests {
         await manager.signOut()
 
         #expect(manager.model.nextEvent == nil)
-        #expect(manager.model.shouldShowOverlay == false)
+        #expect(manager.model.shouldShowOverlay == true)
+        #expect(manager.model.isIdle == true)
     }
 
     @Test @MainActor func setMeetingsOnlyToFalseShowsSoloEvents() {
         let manager = CalendarManager()
         manager.model.setEvents([])
-        manager.model.alwaysShowCircle = false
         manager.model.meetingsOnly = true
         manager.model.nextEvent = CalendarEvent(
             id: "1",
@@ -66,11 +66,13 @@ struct CalendarManagerTests {
             hasOtherAttendees: false
         )
         manager.model.updateState()
-        #expect(manager.model.shouldShowOverlay == false)
+        #expect(manager.model.shouldShowOverlay == true)
+        #expect(manager.model.isIdle == true)
 
         manager.setMeetingsOnly(false)
 
         #expect(manager.model.meetingsOnly == false)
         #expect(manager.model.shouldShowOverlay == true)
+        #expect(manager.model.isIdle == false)
     }
 }

@@ -15,10 +15,6 @@ final class CountdownModel {
         didSet { defaults.set(meetingsOnly, forKey: DefaultsKey.meetingsOnly) }
     }
 
-    var alwaysShowCircle: Bool {
-        didSet { defaults.set(alwaysShowCircle, forKey: DefaultsKey.alwaysShowCircle) }
-    }
-
     private(set) var shouldShowOverlay: Bool = true
     private(set) var minutesRemaining: Int = 0
     private(set) var colourProgress: Double = 0.0  // 0 = green (60 min), 1 = red (0 min)
@@ -40,11 +36,6 @@ final class CountdownModel {
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         self.meetingsOnly = defaults.bool(forKey: DefaultsKey.meetingsOnly)
-        if defaults.object(forKey: DefaultsKey.alwaysShowCircle) == nil {
-            self.alwaysShowCircle = true
-        } else {
-            self.alwaysShowCircle = defaults.bool(forKey: DefaultsKey.alwaysShowCircle)
-        }
         self.compactMode = defaults.bool(forKey: DefaultsKey.compactMode)
         if defaults.object(forKey: DefaultsKey.showingEventDetails) == nil {
             self.showingEventDetails = true
@@ -124,14 +115,9 @@ final class CountdownModel {
 
     private func setIdleOrHidden() {
         ringProgress = 0
-        if alwaysShowCircle {
-            shouldShowOverlay = true
-            isIdle = true
-            isFlashing = false
-        } else {
-            shouldShowOverlay = false
-            isIdle = false
-        }
+        shouldShowOverlay = true
+        isIdle = true
+        isFlashing = false
     }
 
     func dismiss() {
@@ -143,7 +129,6 @@ final class CountdownModel {
 
 private enum DefaultsKey {
     static let meetingsOnly = "meetingsOnly"
-    static let alwaysShowCircle = "alwaysShowCircle"
     static let compactMode = "compactMode"
     static let showingEventDetails = "showingEventDetails"
 }

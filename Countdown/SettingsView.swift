@@ -68,13 +68,6 @@ struct SettingsView: View {
         )
     }
 
-    private var alwaysShowCircleBinding: Binding<Bool> {
-        Binding(
-            get: { manager.model.alwaysShowCircle },
-            set: { manager.setAlwaysShowCircle($0) }
-        )
-    }
-
     private var launchAtLoginBinding: Binding<Bool> {
         Binding(
             get: { SMAppService.mainApp.status == .enabled },
@@ -173,17 +166,6 @@ struct SettingsView: View {
             Picker("", selection: meetingsOnlyBinding) {
                 Text("All events").tag(false)
                 Text("Meetings only").tag(true)
-            }
-            .pickerStyle(.segmented)
-
-            Text("Show circle")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .padding(.top, 4)
-
-            Picker("", selection: alwaysShowCircleBinding) {
-                Text("Always").tag(true)
-                Text("Only before events").tag(false)
             }
             .pickerStyle(.segmented)
 
