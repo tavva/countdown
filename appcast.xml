@@ -12,5 +12,15 @@
                  type="application/octet-stream"
                  sparkle:edSignature="PaUY0RlZFuwjtKUOZkaJr3g3m9gU9jrftxgGAK1e8zckA60XxC437hybjhr2cEEqp0T5ISIeVaFGPH7tNGpVDA==" length="3239106" />
     </item>
+    <item>
+      <title>Version 1.4.0</title>
+      <pubDate>Wed, 18 Mar 2026 08:18:56 +0000</pubDate>
+      <sparkle:version>1.4.0</sparkle:version>
+      <sparkle:shortVersionString>1.4.0</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <enclosure url="https://github.com/tavva/countdown/releases/download/v1.4.0/Countdown-1.4.0.dmg"
+                 type="application/octet-stream"
+                 sparkle:edSignature="on7igwq+8MEI7dw6bopNp6e/rt7lzzToyfd5mSQ7piztLVJyFUWsXs3HK9anuJDsetqrWxjg9kVMa6996pTmDg==" length="3244018" />
+    </item>
   </channel>
 </rss>
