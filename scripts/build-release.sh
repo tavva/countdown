@@ -26,6 +26,12 @@ if git rev-parse "$TAG" >/dev/null 2>&1; then
   exit 1
 fi
 
+echo "==> Setting version to ${VERSION}..."
+/usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${VERSION}" "Countdown/Info.plist"
+/usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${VERSION}" "Countdown/Info.plist"
+git add Countdown/Info.plist
+git commit -m "Bump version to ${VERSION}"
+
 rm -rf "$BUILD_DIR"
 
 echo "==> Archiving..."

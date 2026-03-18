@@ -47,6 +47,13 @@ struct SettingsView: View {
                     .buttonStyle(.plain)
                     .foregroundStyle(.secondary)
                 }
+
+                if let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String {
+                    Text("Countdown v\(version)")
+                        .font(.system(size: 9))
+                        .foregroundStyle(.tertiary)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                }
             }
             .padding()
         }
