@@ -11,8 +11,13 @@ struct CountdownApp: App {
         MenuBarExtra {
             SettingsView(manager: appDelegate.calendarManager, updateManager: appDelegate.updateManager)
         } label: {
-            Image(systemName: "circle.fill")
-                .foregroundStyle(appDelegate.calendarManager.model.shouldShowOverlay ? .red : .gray)
+            if appDelegate.calendarManager.isSignedIn {
+                Image(systemName: "circle.fill")
+                    .foregroundStyle(appDelegate.calendarManager.model.shouldShowOverlay ? .red : .gray)
+            } else {
+                Image(systemName: "exclamationmark.circle.fill")
+                    .foregroundStyle(.cyan)
+            }
         }
         .menuBarExtraStyle(.window)
     }
