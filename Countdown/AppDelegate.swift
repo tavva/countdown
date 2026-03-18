@@ -98,6 +98,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func observeOverlayState() {
         withObservationTracking {
+            _ = calendarManager.isSignedIn
             _ = calendarManager.model.shouldShowOverlay
             _ = calendarManager.model.showingEventDetails
             _ = calendarManager.model.isIdle
@@ -137,7 +138,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func updatePanel() {
         guard let panel = overlayPanel else { return }
 
-        if calendarManager.model.shouldShowOverlay {
+        if calendarManager.isSignedIn && calendarManager.model.shouldShowOverlay {
             let layoutState = OverlayLayoutState(model: calendarManager.model)
             transitionState.prepare(for: layoutState)
             panel.isCompact = layoutState.mode == .compact

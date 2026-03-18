@@ -200,10 +200,14 @@ final class CalendarManager {
         } catch CalendarClientError.unauthorised {
             isSignedIn = false
             errorMessage = "Session expired. Please sign in again."
+            model.setEvents([])
+            model.updateState()
             stopPolling()
         } catch is GoogleAuthError {
             isSignedIn = false
             errorMessage = "Session expired. Please sign in again."
+            model.setEvents([])
+            model.updateState()
             stopPolling()
         } catch {
             errorMessage = "Failed to fetch events: \(error.localizedDescription)"

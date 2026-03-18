@@ -151,6 +151,7 @@ struct CalendarManagerTests {
 
         #expect(manager.isSignedIn == false)
         #expect(manager.errorMessage == "Session expired. Please sign in again.")
+        #expect(manager.model.isLoading == false)
     }
 
     @Test @MainActor func signsOutWhenRefreshTokenIsInvalid() async {
@@ -172,6 +173,7 @@ struct CalendarManagerTests {
 
         #expect(manager.isSignedIn == false)
         #expect(manager.errorMessage == "Session expired. Please sign in again.")
+        #expect(manager.model.isLoading == false)
     }
 
     @Test @MainActor func setMeetingsOnlyToFalseShowsSoloEvents() {
