@@ -138,7 +138,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func updatePanel() {
         guard let panel = overlayPanel else { return }
 
-        if calendarManager.isSignedIn && calendarManager.model.shouldShowOverlay {
+        if calendarManager.model.shouldShowOverlay {
             let layoutState = OverlayLayoutState(model: calendarManager.model)
             transitionState.prepare(for: layoutState)
             panel.isCompact = layoutState.mode == .compact
@@ -512,6 +512,7 @@ struct OverlayContent: View {
                 isFlashing: manager.model.isFlashing,
                 isIdle: manager.model.isIdle,
                 isLoading: manager.model.isLoading,
+                isDisconnected: !manager.isSignedIn,
                 ringProgress: manager.model.ringProgress
             )
 
@@ -540,6 +541,7 @@ struct OverlayContent: View {
                 isFlashing: manager.model.isFlashing,
                 isIdle: manager.model.isIdle,
                 isLoading: manager.model.isLoading,
+                isDisconnected: !manager.isSignedIn,
                 ringProgress: manager.model.ringProgress,
                 compact: true
             )

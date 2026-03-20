@@ -9,6 +9,7 @@ struct CircleView: View {
     let isFlashing: Bool
     let isIdle: Bool
     let isLoading: Bool
+    let isDisconnected: Bool
     let ringProgress: Double  // 0 = no ring, 1 = full ring
     var compact: Bool = false
 
@@ -16,6 +17,9 @@ struct CircleView: View {
     @State private var spinAngle: Double = 0
 
     private var circleColour: Color {
+        if isDisconnected {
+            return .cyan
+        }
         if isLoading {
             return Color(red: 1.0, green: 0.92, blue: 0.55)
         }
@@ -56,14 +60,22 @@ struct CircleView: View {
             }
 
             if compact {
-                if isLoading {
+                if isDisconnected {
+                    Image(systemName: "exclamationmark")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(.white)
+                } else if isLoading {
                     Image(systemName: "arrow.trianglehead.2.clockwise")
                         .font(.system(size: 10, weight: .semibold))
                         .foregroundStyle(.white.opacity(0.8))
                         .rotationEffect(.degrees(spinAngle))
                 }
             } else {
-                if isLoading {
+                if isDisconnected {
+                    Image(systemName: "exclamationmark")
+                        .font(.system(size: 28, weight: .bold))
+                        .foregroundStyle(.white)
+                } else if isLoading {
                     Image(systemName: "arrow.trianglehead.2.clockwise")
                         .font(.system(size: 28, weight: .semibold))
                         .foregroundStyle(.white.opacity(0.8))
