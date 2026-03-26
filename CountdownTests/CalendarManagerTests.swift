@@ -39,6 +39,7 @@ private final class ManagerMockProtocol: URLProtocol, @unchecked Sendable {
 struct CalendarManagerTests {
     private let _snapshot = DefaultsSnapshot(keys: [
         "meetingsOnly", "enabledCalendarIDs",
+        "hideDeclinedEvents",
     ])
 
     @Test @MainActor func setMeetingsOnlyUpdatesOverlayImmediately() {
@@ -174,6 +175,26 @@ struct CalendarManagerTests {
         #expect(manager.isSignedIn == false)
         #expect(manager.errorMessage == "Session expired. Please sign in again.")
         #expect(manager.model.isLoading == false)
+    }
+
+    @Test @MainActor func setHideDeclinedEventsUpdatesOverlayImmediately() {
+        let manager = CalendarManager()
+        manager.model.setEvents([])
+        manager.model.hideDeclinedEvents = false
+        manager.model.nextEvent = CalendarEvent(
+            id: "1",
+            summary: "Declined: Team Standup",
+            startTime: Date().addingTimeInterval(30 * 60),
+            endTime: Date().addingTimeInterval(60 * 60),
+            hasOtherAttendees: true
+        )
+        manager.model.updateState()
+        #expect(manager.model.isIdle == false)
+
+        manager.setHideDeclinedEvents(true)
+
+        #expect(manager.model.hideDeclinedEvents == true)
+        #expect(manager.model.isIdle == true)
     }
 
     @Test @MainActor func setMeetingsOnlyToFalseShowsSoloEvents() {

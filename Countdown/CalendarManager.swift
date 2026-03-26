@@ -124,6 +124,12 @@ final class CalendarManager {
         poll()
     }
 
+    func setHideDeclinedEvents(_ value: Bool) {
+        model.hideDeclinedEvents = value
+        model.updateState()
+        poll()
+    }
+
     // MARK: - Polling
 
     func startPolling(skipInitialFetch: Bool = false) {
@@ -183,11 +189,14 @@ final class CalendarManager {
 
             allEvents.sort { $0.startTime < $1.startTime }
 
-            let filtered: [CalendarEvent]
+            var filtered = allEvents
             if model.meetingsOnly {
-                filtered = allEvents.filter { $0.hasOtherAttendees }
-            } else {
-                filtered = allEvents
+                filtered = filtered.filter { $0.hasOtherAttendees }
+            }
+            if model.hideDeclinedEvents {
+                filtered = filtered.filter {
+                    !$0.summary.hasPrefix("Declined:") && !$0.summary.hasPrefix("Cancelled:")
+                }
             }
 
             model.setEvents(filtered)

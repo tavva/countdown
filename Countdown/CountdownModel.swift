@@ -14,6 +14,9 @@ final class CountdownModel {
     var meetingsOnly: Bool {
         didSet { defaults.set(meetingsOnly, forKey: DefaultsKey.meetingsOnly) }
     }
+    var hideDeclinedEvents: Bool {
+        didSet { defaults.set(hideDeclinedEvents, forKey: DefaultsKey.hideDeclinedEvents) }
+    }
 
     private(set) var shouldShowOverlay: Bool = true
     private(set) var minutesRemaining: Int = 0
@@ -36,6 +39,11 @@ final class CountdownModel {
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         self.meetingsOnly = defaults.bool(forKey: DefaultsKey.meetingsOnly)
+        if defaults.object(forKey: DefaultsKey.hideDeclinedEvents) == nil {
+            self.hideDeclinedEvents = true
+        } else {
+            self.hideDeclinedEvents = defaults.bool(forKey: DefaultsKey.hideDeclinedEvents)
+        }
         self.compactMode = defaults.bool(forKey: DefaultsKey.compactMode)
         if defaults.object(forKey: DefaultsKey.showingEventDetails) == nil {
             self.showingEventDetails = true
@@ -74,6 +82,11 @@ final class CountdownModel {
         }
 
         if meetingsOnly && !event.hasOtherAttendees {
+            setIdleOrHidden()
+            return
+        }
+
+        if hideDeclinedEvents && (event.summary.hasPrefix("Declined:") || event.summary.hasPrefix("Cancelled:")) {
             setIdleOrHidden()
             return
         }
@@ -129,6 +142,7 @@ final class CountdownModel {
 
 private enum DefaultsKey {
     static let meetingsOnly = "meetingsOnly"
+    static let hideDeclinedEvents = "hideDeclinedEvents"
     static let compactMode = "compactMode"
     static let showingEventDetails = "showingEventDetails"
 }

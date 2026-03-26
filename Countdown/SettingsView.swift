@@ -68,6 +68,13 @@ struct SettingsView: View {
         )
     }
 
+    private var hideDeclinedBinding: Binding<Bool> {
+        Binding(
+            get: { manager.model.hideDeclinedEvents },
+            set: { manager.setHideDeclinedEvents($0) }
+        )
+    }
+
     private var launchAtLoginBinding: Binding<Bool> {
         Binding(
             get: { SMAppService.mainApp.status == .enabled },
@@ -168,6 +175,9 @@ struct SettingsView: View {
                 Text("Meetings only").tag(true)
             }
             .pickerStyle(.segmented)
+
+            Toggle("Hide declined & cancelled", isOn: hideDeclinedBinding)
+                .toggleStyle(.switch)
 
             Text("Event details")
                 .font(.subheadline)

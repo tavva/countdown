@@ -9,6 +9,7 @@ import Foundation
 struct CountdownModelTests {
     private let _snapshot = DefaultsSnapshot(keys: [
         "meetingsOnly", "showingEventDetails", "compactMode",
+        "hideDeclinedEvents",
     ])
 
     // MARK: - Loading state
@@ -587,6 +588,71 @@ struct CountdownModelTests {
 
         model.toggleCompactMode()
         #expect(changes.value == 1)
+    }
+
+    // MARK: - Hide declined events
+
+    @Test func hideDeclinedEventsDefaultsToTrue() {
+        UserDefaults.standard.removeObject(forKey: "hideDeclinedEvents")
+        let model = CountdownModel()
+        #expect(model.hideDeclinedEvents == true)
+    }
+
+    @Test func hideDeclinedEventsFiltersDeclinedPrefix() {
+        let model = CountdownModel()
+        model.setEvents([])
+        model.hideDeclinedEvents = true
+        model.nextEvent = CalendarEvent(
+            id: "1",
+            summary: "Declined: Team Standup",
+            startTime: Date().addingTimeInterval(30 * 60),
+            endTime: Date().addingTimeInterval(60 * 60),
+            hasOtherAttendees: true
+        )
+        model.updateState()
+        #expect(model.shouldShowOverlay == true)
+        #expect(model.isIdle == true)
+    }
+
+    @Test func hideDeclinedEventsFiltersCancelledPrefix() {
+        let model = CountdownModel()
+        model.setEvents([])
+        model.hideDeclinedEvents = true
+        model.nextEvent = CalendarEvent(
+            id: "1",
+            summary: "Cancelled: Sprint Review",
+            startTime: Date().addingTimeInterval(30 * 60),
+            endTime: Date().addingTimeInterval(60 * 60),
+            hasOtherAttendees: true
+        )
+        model.updateState()
+        #expect(model.shouldShowOverlay == true)
+        #expect(model.isIdle == true)
+    }
+
+    @Test func hideDeclinedEventsOffShowsDeclinedEvents() {
+        let model = CountdownModel()
+        model.setEvents([])
+        model.hideDeclinedEvents = false
+        model.nextEvent = CalendarEvent(
+            id: "1",
+            summary: "Declined: Team Standup",
+            startTime: Date().addingTimeInterval(30 * 60),
+            endTime: Date().addingTimeInterval(60 * 60),
+            hasOtherAttendees: true
+        )
+        model.updateState()
+        #expect(model.shouldShowOverlay == true)
+        #expect(model.isIdle == false)
+    }
+
+    @Test func hideDeclinedEventsPersists() {
+        let model = CountdownModel()
+        model.hideDeclinedEvents = false
+        #expect(model.hideDeclinedEvents == false)
+
+        let model2 = CountdownModel()
+        #expect(model2.hideDeclinedEvents == false)
     }
 }
 
