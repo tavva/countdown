@@ -74,6 +74,28 @@ Tests use Swift Testing framework (`@Suite`, `@Test`, `#expect`) — not XCTest.
 
 The Xcode project is generated from `project.yml` using XcodeGen. Edit `project.yml` for target/dependency changes, then run `xcodegen generate`.
 
+## Releasing
+
+Releases are handled by `scripts/build-release.sh <version>`. Do NOT manually create GitHub releases, tags, or version bumps — the script does all of this:
+
+1. Bumps the version in `Info.plist` and commits
+2. Archives, code-signs, and notarises the app
+3. Creates a signed DMG
+4. Signs the DMG with EdDSA for Sparkle auto-update
+5. Updates `appcast.xml` on the `gh-pages` branch
+6. Tags and pushes
+7. Creates the GitHub release with the DMG attached
+
+```bash
+# Prerequisite (one-time): download Sparkle signing tools
+scripts/download-sparkle-tools.sh
+
+# Release (e.g. version 1.5.6)
+scripts/build-release.sh 1.5.6
+```
+
+The script requires a Developer ID Application certificate and stored notarisation credentials (`NOTARIZE_PROFILE`, defaults to `countdown-notarize`). The working tree must be clean before running.
+
 ## Documentation
 
 When updating README.md or CONTRIBUTING.md, check the other file to ensure they stay in sync and don't contain duplicate or contradictory information.
