@@ -424,6 +424,20 @@ struct OverlayLayoutStateCachingTests {
         #expect(cache.size(for: detailsHidden) == CGSize(width: 80, height: 36))
         #expect(cache.size(for: detailsShown) == CGSize(width: 188, height: 36))
     }
+
+    @Test func compactEmptyMessageKeepsSeparateWidthFromDotOnly() {
+        var cache = OverlayMeasurementCache()
+        let dotOnly = OverlayLayoutState(mode: .compact, showsEventDetails: false, showsCompactMinutes: false, showsEmptyMessage: false)
+        let emptyMessage = OverlayLayoutState(mode: .compact, showsEventDetails: false, showsCompactMinutes: false, showsEmptyMessage: true)
+
+        _ = cache.applyHeight(35.2, for: dotOnly)
+        _ = cache.applyWidth(44.0, for: dotOnly)
+        _ = cache.applyHeight(35.2, for: emptyMessage)
+        _ = cache.applyWidth(180.0, for: emptyMessage)
+
+        #expect(cache.size(for: dotOnly) == CGSize(width: 44, height: 36))
+        #expect(cache.size(for: emptyMessage) == CGSize(width: 180, height: 36))
+    }
 }
 
 @Suite("OverlayLayoutStateTransition")
@@ -440,5 +454,62 @@ struct OverlayLayoutStateTransitionTests {
         let completed = transition.registerMeasurement(for: detailsShown, axis: .height)
         #expect(completed)
         #expect(transition.presentedState == detailsShown)
+    }
+
+    @Test func compactLoadingToIdleWithEmptyMessageStartsTransition() {
+        let loading = OverlayLayoutState(mode: .compact, showsEventDetails: false, showsCompactMinutes: false, showsEmptyMessage: false)
+        let idle = OverlayLayoutState(mode: .compact, showsEventDetails: false, showsCompactMinutes: false, showsEmptyMessage: true)
+        var transition = OverlayTransitionState(initialState: loading)
+
+        transition.prepare(for: idle)
+
+        #expect(transition.isAwaitingMeasurement)
+        #expect(loading != idle)
+    }
+}
+
+@Suite("OverlayLayoutState construction", .serialized)
+struct OverlayLayoutStateModelTests {
+    private let _snapshot = DefaultsSnapshot(keys: [
+        "meetingsOnly", "showingEventDetails", "compactMode",
+        "hideDeclinedEvents",
+    ])
+
+    @Test func compactIdleWithDetailsShowsEmptyMessage() {
+        let model = CountdownModel()
+        model.compactMode = true
+        model.showingEventDetails = true
+        model.setEvents([])
+        model.updateState()
+
+        let state = OverlayLayoutState(model: model)
+
+        #expect(state.mode == .compact)
+        #expect(state.showsEmptyMessage == true)
+    }
+
+    @Test func compactLoadingDoesNotShowEmptyMessage() {
+        let model = CountdownModel()
+        model.compactMode = true
+        model.showingEventDetails = true
+        // Model starts in loading state, don't call setEvents
+
+        let state = OverlayLayoutState(model: model)
+
+        #expect(state.mode == .compact)
+        #expect(state.showsEmptyMessage == false)
+    }
+
+    @Test func compactIdleWithDetailsOffDoesNotShowEmptyMessage() {
+        let model = CountdownModel()
+        model.compactMode = true
+        model.showingEventDetails = false
+        model.setEvents([])
+        model.updateState()
+
+        let state = OverlayLayoutState(model: model)
+
+        #expect(state.mode == .compact)
+        #expect(state.showsEmptyMessage == false)
     }
 }
