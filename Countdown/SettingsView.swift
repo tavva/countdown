@@ -226,14 +226,15 @@ struct SettingsView: View {
 
             if manager.model.autoReposition {
                 Picker("", selection: repositionCornerBinding) {
-                    Text("Top L").tag(ScreenCorner.topLeft)
-                    Text("Top R").tag(ScreenCorner.topRight)
-                    Text("Bot L").tag(ScreenCorner.bottomLeft)
-                    Text("Bot R").tag(ScreenCorner.bottomRight)
+                    Image(systemName: "arrow.up.left").tag(ScreenCorner.topLeft)
+                    Image(systemName: "arrow.up.right").tag(ScreenCorner.topRight)
+                    Image(systemName: "arrow.down.left").tag(ScreenCorner.bottomLeft)
+                    Image(systemName: "arrow.down.right").tag(ScreenCorner.bottomRight)
                 }
                 .pickerStyle(.segmented)
             }
         }
+        .animation(.default, value: manager.model.autoReposition)
     }
 
     @ViewBuilder
@@ -279,7 +280,7 @@ private struct AutoModeHelpButton: View {
         }
         .buttonStyle(.plain)
         .popover(isPresented: $showingHelp, arrowEdge: .bottom) {
-            Text("Auto uses the compact size on your built-in display alone, and the standard size when an external display is connected.")
+            Text("Auto uses the compact size when only your built-in display is active, and the standard size when an external display is connected.")
                 .font(.caption)
                 .frame(width: 220)
                 .padding(10)
