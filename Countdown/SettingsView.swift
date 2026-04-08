@@ -99,10 +99,24 @@ struct SettingsView: View {
         )
     }
 
-    private var compactModeBinding: Binding<Bool> {
+    private var sizeModeBinding: Binding<SizeMode> {
         Binding(
-            get: { manager.model.compactMode },
-            set: { manager.model.compactMode = $0 }
+            get: { manager.model.sizeMode },
+            set: { manager.model.sizeMode = $0 }
+        )
+    }
+
+    private var autoRepositionBinding: Binding<Bool> {
+        Binding(
+            get: { manager.model.autoReposition },
+            set: { manager.model.autoReposition = $0 }
+        )
+    }
+
+    private var repositionCornerBinding: Binding<ScreenCorner> {
+        Binding(
+            get: { manager.model.repositionCorner },
+            set: { manager.model.repositionCorner = $0 }
         )
     }
 
@@ -190,16 +204,35 @@ struct SettingsView: View {
             }
             .pickerStyle(.segmented)
 
-            Text("Circle size")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .padding(.top, 4)
+            HStack(spacing: 4) {
+                Text("Circle size")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                AutoModeHelpButton()
+                Spacer()
+            }
+            .padding(.top, 4)
 
-            Picker("", selection: compactModeBinding) {
-                Text("Standard").tag(false)
-                Text("Compact").tag(true)
+            Picker("", selection: sizeModeBinding) {
+                Text("Standard").tag(SizeMode.standard)
+                Text("Compact").tag(SizeMode.compact)
+                Text("Auto").tag(SizeMode.auto)
             }
             .pickerStyle(.segmented)
+
+            Toggle("Auto-reposition on display change", isOn: autoRepositionBinding)
+                .toggleStyle(.switch)
+                .padding(.top, 4)
+
+            if manager.model.autoReposition {
+                Picker("", selection: repositionCornerBinding) {
+                    Text("Top L").tag(ScreenCorner.topLeft)
+                    Text("Top R").tag(ScreenCorner.topRight)
+                    Text("Bot L").tag(ScreenCorner.bottomLeft)
+                    Text("Bot R").tag(ScreenCorner.bottomRight)
+                }
+                .pickerStyle(.segmented)
+            }
         }
     }
 
@@ -229,6 +262,27 @@ struct SettingsView: View {
                     }
                 }
             }
+        }
+    }
+}
+
+private struct AutoModeHelpButton: View {
+    @State private var showingHelp = false
+
+    var body: some View {
+        Button {
+            showingHelp.toggle()
+        } label: {
+            Image(systemName: "questionmark.circle")
+                .foregroundStyle(.secondary)
+                .font(.caption)
+        }
+        .buttonStyle(.plain)
+        .popover(isPresented: $showingHelp, arrowEdge: .bottom) {
+            Text("Auto uses the compact size on your built-in display alone, and the standard size when an external display is connected.")
+                .font(.caption)
+                .frame(width: 220)
+                .padding(10)
         }
     }
 }
