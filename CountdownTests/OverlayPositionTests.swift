@@ -472,7 +472,7 @@ struct OverlayLayoutStateTransitionTests {
 struct OverlayLayoutStateModelTests {
     private let _snapshot = DefaultsSnapshot(keys: [
         "meetingsOnly", "showingEventDetails", "compactMode",
-        "hideDeclinedEvents",
+        "hideDeclinedEvents", "sizeMode", "autoReposition", "repositionCorner",
     ])
 
     @Test func compactIdleWithDetailsShowsEmptyMessage() {
