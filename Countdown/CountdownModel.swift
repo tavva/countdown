@@ -4,6 +4,19 @@
 import Foundation
 import Observation
 
+enum SizeMode: Int {
+    case standard = 0
+    case compact = 1
+    case auto = 2
+}
+
+enum ScreenCorner: Int {
+    case topLeft = 0
+    case topRight = 1
+    case bottomLeft = 2
+    case bottomRight = 3
+}
+
 @Observable
 final class CountdownModel {
     private let defaults: UserDefaults
@@ -25,8 +38,28 @@ final class CountdownModel {
     private(set) var isIdle: Bool = false
     private(set) var isLoading: Bool = true
     private(set) var ringProgress: Double = 0.0  // 0 = no ring, 1 = full ring
-    var compactMode: Bool {
-        didSet { defaults.set(compactMode, forKey: DefaultsKey.compactMode) }
+    // Effective state — derived from sizeMode + current display configuration.
+    // Production code should route changes through sizeMode or applyEffectiveMode;
+    // tests may set it directly to exercise layout logic.
+    var compactMode: Bool = false
+
+    var sizeMode: SizeMode {
+        didSet {
+            defaults.set(sizeMode.rawValue, forKey: DefaultsKey.sizeMode)
+            switch sizeMode {
+            case .standard: compactMode = false
+            case .compact: compactMode = true
+            case .auto: break  // AppDelegate calls applyEffectiveMode via observation
+            }
+        }
+    }
+
+    var autoReposition: Bool {
+        didSet { defaults.set(autoReposition, forKey: DefaultsKey.autoReposition) }
+    }
+
+    var repositionCorner: ScreenCorner {
+        didSet { defaults.set(repositionCorner.rawValue, forKey: DefaultsKey.repositionCorner) }
     }
 
     var showingEventDetails: Bool {
@@ -44,7 +77,31 @@ final class CountdownModel {
         } else {
             self.hideDeclinedEvents = defaults.bool(forKey: DefaultsKey.hideDeclinedEvents)
         }
-        self.compactMode = defaults.bool(forKey: DefaultsKey.compactMode)
+
+        // Migrate: if sizeMode isn't set but legacy compactMode is, derive sizeMode from it.
+        let resolvedMode: SizeMode
+        if defaults.object(forKey: DefaultsKey.sizeMode) != nil {
+            resolvedMode = SizeMode(rawValue: defaults.integer(forKey: DefaultsKey.sizeMode)) ?? .standard
+        } else if defaults.object(forKey: DefaultsKey.compactMode) != nil {
+            resolvedMode = defaults.bool(forKey: DefaultsKey.compactMode) ? .compact : .standard
+        } else {
+            resolvedMode = .standard
+        }
+        self.sizeMode = resolvedMode
+        // Persist migrated value so the didSet-free init path still writes it.
+        defaults.set(resolvedMode.rawValue, forKey: DefaultsKey.sizeMode)
+
+        self.autoReposition = defaults.bool(forKey: DefaultsKey.autoReposition)
+        self.repositionCorner = ScreenCorner(rawValue: defaults.integer(forKey: DefaultsKey.repositionCorner)) ?? .topLeft
+
+        // Set initial compactMode to match non-auto sizeMode. Auto mode is applied
+        // by AppDelegate after init once NSScreen is available.
+        switch resolvedMode {
+        case .standard: self.compactMode = false
+        case .compact: self.compactMode = true
+        case .auto: self.compactMode = false  // placeholder, replaced on applyEffectiveMode
+        }
+
         if defaults.object(forKey: DefaultsKey.showingEventDetails) == nil {
             self.showingEventDetails = true
         } else {
@@ -58,7 +115,25 @@ final class CountdownModel {
     }
 
     func toggleCompactMode() {
-        compactMode.toggle()
+        if compactMode {
+            sizeMode = .standard
+            compactMode = false
+        } else {
+            sizeMode = .compact
+            compactMode = true
+        }
+    }
+
+    func applyEffectiveMode(hasExternalDisplay: Bool) {
+        let newValue: Bool
+        switch sizeMode {
+        case .standard: newValue = false
+        case .compact: newValue = true
+        case .auto: newValue = !hasExternalDisplay
+        }
+        if compactMode != newValue {
+            compactMode = newValue
+        }
     }
 
     func toggleEventDetails() {
@@ -145,4 +220,7 @@ private enum DefaultsKey {
     static let hideDeclinedEvents = "hideDeclinedEvents"
     static let compactMode = "compactMode"
     static let showingEventDetails = "showingEventDetails"
+    static let sizeMode = "sizeMode"
+    static let autoReposition = "autoReposition"
+    static let repositionCorner = "repositionCorner"
 }

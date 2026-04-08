@@ -9,7 +9,7 @@ import Foundation
 struct CountdownModelTests {
     private let _snapshot = DefaultsSnapshot(keys: [
         "meetingsOnly", "showingEventDetails", "compactMode",
-        "hideDeclinedEvents",
+        "hideDeclinedEvents", "sizeMode", "autoReposition", "repositionCorner",
     ])
 
     // MARK: - Loading state
@@ -554,26 +554,20 @@ struct CountdownModelTests {
 
     @Test func compactModeDefaultsToFalse() {
         UserDefaults.standard.removeObject(forKey: "compactMode")
+        UserDefaults.standard.removeObject(forKey: "sizeMode")
         let model = CountdownModel()
         #expect(model.compactMode == false)
-    }
-
-    @Test func compactModePersists() {
-        let model = CountdownModel()
-        model.compactMode = true
-        #expect(model.compactMode == true)
-
-        let model2 = CountdownModel()
-        #expect(model2.compactMode == true)
     }
 
     @Test func toggleCompactMode() {
         let model = CountdownModel()
-        model.compactMode = false
+        model.sizeMode = .standard  // ensures compactMode == false
         model.toggleCompactMode()
         #expect(model.compactMode == true)
+        #expect(model.sizeMode == .compact)
         model.toggleCompactMode()
         #expect(model.compactMode == false)
+        #expect(model.sizeMode == .standard)
     }
 
     @Test func compactModeChangesAreObservable() {
@@ -653,6 +647,110 @@ struct CountdownModelTests {
 
         let model2 = CountdownModel()
         #expect(model2.hideDeclinedEvents == false)
+    }
+
+    // MARK: - Size mode
+
+    @Test func sizeModeDefaultsToStandardWhenNothingPersisted() {
+        UserDefaults.standard.removeObject(forKey: "sizeMode")
+        UserDefaults.standard.removeObject(forKey: "compactMode")
+        let model = CountdownModel()
+        #expect(model.sizeMode == .standard)
+    }
+
+    @Test func sizeModeMigratesFromLegacyCompactModeTrue() {
+        UserDefaults.standard.removeObject(forKey: "sizeMode")
+        UserDefaults.standard.set(true, forKey: "compactMode")
+        let model = CountdownModel()
+        #expect(model.sizeMode == .compact)
+    }
+
+    @Test func sizeModeMigratesFromLegacyCompactModeFalse() {
+        UserDefaults.standard.removeObject(forKey: "sizeMode")
+        UserDefaults.standard.set(false, forKey: "compactMode")
+        let model = CountdownModel()
+        #expect(model.sizeMode == .standard)
+    }
+
+    @Test func sizeModePersists() {
+        let model = CountdownModel()
+        model.sizeMode = .auto
+        let model2 = CountdownModel()
+        #expect(model2.sizeMode == .auto)
+    }
+
+    @Test func applyEffectiveModeStandard() {
+        let model = CountdownModel()
+        model.sizeMode = .standard
+        model.applyEffectiveMode(hasExternalDisplay: false)
+        #expect(model.compactMode == false)
+        model.applyEffectiveMode(hasExternalDisplay: true)
+        #expect(model.compactMode == false)
+    }
+
+    @Test func applyEffectiveModeCompact() {
+        let model = CountdownModel()
+        model.sizeMode = .compact
+        model.applyEffectiveMode(hasExternalDisplay: false)
+        #expect(model.compactMode == true)
+        model.applyEffectiveMode(hasExternalDisplay: true)
+        #expect(model.compactMode == true)
+    }
+
+    @Test func applyEffectiveModeAutoWithoutExternalUsesCompact() {
+        let model = CountdownModel()
+        model.sizeMode = .auto
+        model.applyEffectiveMode(hasExternalDisplay: false)
+        #expect(model.compactMode == true)
+    }
+
+    @Test func applyEffectiveModeAutoWithExternalUsesStandard() {
+        let model = CountdownModel()
+        model.sizeMode = .auto
+        model.applyEffectiveMode(hasExternalDisplay: true)
+        #expect(model.compactMode == false)
+    }
+
+    // MARK: - Auto reposition
+
+    @Test func autoRepositionDefaultsToFalse() {
+        UserDefaults.standard.removeObject(forKey: "autoReposition")
+        let model = CountdownModel()
+        #expect(model.autoReposition == false)
+    }
+
+    @Test func autoRepositionPersists() {
+        let model = CountdownModel()
+        model.autoReposition = true
+        let model2 = CountdownModel()
+        #expect(model2.autoReposition == true)
+    }
+
+    @Test func repositionCornerDefaultsToTopLeft() {
+        UserDefaults.standard.removeObject(forKey: "repositionCorner")
+        let model = CountdownModel()
+        #expect(model.repositionCorner == .topLeft)
+    }
+
+    @Test func repositionCornerPersists() {
+        let model = CountdownModel()
+        model.repositionCorner = .bottomRight
+        let model2 = CountdownModel()
+        #expect(model2.repositionCorner == .bottomRight)
+    }
+
+    // MARK: - Context menu toggle respects sizeMode
+
+    @Test func toggleCompactModeUpdatesSizeMode() {
+        let model = CountdownModel()
+        model.sizeMode = .auto
+        model.applyEffectiveMode(hasExternalDisplay: true)  // compactMode=false
+        model.toggleCompactMode()
+        #expect(model.sizeMode == .compact)
+        #expect(model.compactMode == true)
+        model.toggleCompactMode()
+        #expect(model.sizeMode == .standard)
+        #expect(model.compactMode == false)
     }
 }
 
