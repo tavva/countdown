@@ -149,6 +149,53 @@ struct OverlayPositionTests {
         #expect(result!.x == 1820)
         #expect(result!.y == -60)
     }
+
+    // MARK: - Corner positioning
+
+    @Test func cornerOriginTopLeft() {
+        let origin = OverlayPosition.cornerOrigin(
+            corner: .topLeft,
+            visibleFrame: CGRect(x: 0, y: 0, width: 1920, height: 1080),
+            panelSize: CGSize(width: 200, height: 120)
+        )
+        #expect(origin == CGPoint(x: 20, y: 940))
+    }
+
+    @Test func cornerOriginTopRight() {
+        let origin = OverlayPosition.cornerOrigin(
+            corner: .topRight,
+            visibleFrame: CGRect(x: 0, y: 0, width: 1920, height: 1080),
+            panelSize: CGSize(width: 200, height: 120)
+        )
+        #expect(origin == CGPoint(x: 1700, y: 940))
+    }
+
+    @Test func cornerOriginBottomLeft() {
+        let origin = OverlayPosition.cornerOrigin(
+            corner: .bottomLeft,
+            visibleFrame: CGRect(x: 0, y: 0, width: 1920, height: 1080),
+            panelSize: CGSize(width: 200, height: 120)
+        )
+        #expect(origin == CGPoint(x: 20, y: 20))
+    }
+
+    @Test func cornerOriginBottomRight() {
+        let origin = OverlayPosition.cornerOrigin(
+            corner: .bottomRight,
+            visibleFrame: CGRect(x: 0, y: 0, width: 1920, height: 1080),
+            panelSize: CGSize(width: 200, height: 120)
+        )
+        #expect(origin == CGPoint(x: 1700, y: 20))
+    }
+
+    @Test func cornerOriginRespectsScreenOffset() {
+        let origin = OverlayPosition.cornerOrigin(
+            corner: .topLeft,
+            visibleFrame: CGRect(x: 1920, y: 0, width: 2560, height: 1440),
+            panelSize: CGSize(width: 200, height: 120)
+        )
+        #expect(origin == CGPoint(x: 1940, y: 1300))
+    }
 }
 
 @Suite("OverlayLayout")
@@ -194,6 +241,70 @@ struct OverlayFramePlacementTests {
         let compactFrame = placement.frame(for: CGSize(width: 44, height: 36))
 
         #expect(compactFrame.origin == CGPoint(x: 20, y: 984))
+    }
+
+    @Test func topLeftAnchorKeepsTopLeftPinnedOnResize() {
+        var placement = OverlayFramePlacement(
+            initialFrame: CGRect(x: 100, y: 500, width: 200, height: 120),
+            restoredOrigin: nil,
+            anchor: .topLeft
+        )
+        placement.record(frame: CGRect(x: 100, y: 500, width: 200, height: 120))
+
+        let frame = placement.frame(for: CGSize(width: 400, height: 36))
+        #expect(frame.minX == 100)
+        #expect(frame.maxY == 620)  // original topEdge (500 + 120)
+    }
+
+    @Test func topRightAnchorKeepsTopRightPinnedOnResize() {
+        var placement = OverlayFramePlacement(
+            initialFrame: CGRect(x: 100, y: 500, width: 200, height: 120),
+            restoredOrigin: nil,
+            anchor: .topRight
+        )
+        placement.record(frame: CGRect(x: 100, y: 500, width: 200, height: 120))
+        // Original maxX = 300, topEdge = 620
+
+        let frame = placement.frame(for: CGSize(width: 400, height: 36))
+        #expect(frame.maxX == 300)  // right edge stays pinned
+        #expect(frame.maxY == 620)
+    }
+
+    @Test func bottomLeftAnchorKeepsBottomLeftPinnedOnResize() {
+        var placement = OverlayFramePlacement(
+            initialFrame: CGRect(x: 100, y: 500, width: 200, height: 120),
+            restoredOrigin: nil,
+            anchor: .bottomLeft
+        )
+        placement.record(frame: CGRect(x: 100, y: 500, width: 200, height: 120))
+
+        let frame = placement.frame(for: CGSize(width: 400, height: 36))
+        #expect(frame.minX == 100)
+        #expect(frame.minY == 500)
+    }
+
+    @Test func bottomRightAnchorKeepsBottomRightPinnedOnResize() {
+        var placement = OverlayFramePlacement(
+            initialFrame: CGRect(x: 100, y: 500, width: 200, height: 120),
+            restoredOrigin: nil,
+            anchor: .bottomRight
+        )
+        placement.record(frame: CGRect(x: 100, y: 500, width: 200, height: 120))
+
+        let frame = placement.frame(for: CGSize(width: 400, height: 36))
+        #expect(frame.maxX == 300)
+        #expect(frame.minY == 500)
+    }
+
+    @Test func restoredOriginOverridesAnchorFirstTime() {
+        var placement = OverlayFramePlacement(
+            initialFrame: CGRect(x: 0, y: 0, width: 200, height: 120),
+            restoredOrigin: CGPoint(x: 50, y: 60),
+            anchor: .topLeft
+        )
+        let frame = placement.frame(for: CGSize(width: 200, height: 120))
+        #expect(frame.minX == 50)
+        #expect(frame.minY == 60)
     }
 }
 

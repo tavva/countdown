@@ -49,39 +49,95 @@ enum OverlayPosition {
         let dy = max(rect.minY - point.y, 0, point.y - rect.maxY)
         return dx * dx + dy * dy
     }
+
+    static func cornerOrigin(corner: ScreenCorner, visibleFrame: CGRect, panelSize: CGSize) -> CGPoint {
+        let padding: CGFloat = 20
+        let x: CGFloat
+        let y: CGFloat
+        switch corner {
+        case .topLeft:
+            x = visibleFrame.minX + padding
+            y = visibleFrame.maxY - panelSize.height - padding
+        case .topRight:
+            x = visibleFrame.maxX - panelSize.width - padding
+            y = visibleFrame.maxY - panelSize.height - padding
+        case .bottomLeft:
+            x = visibleFrame.minX + padding
+            y = visibleFrame.minY + padding
+        case .bottomRight:
+            x = visibleFrame.maxX - panelSize.width - padding
+            y = visibleFrame.minY + padding
+        }
+        return CGPoint(x: x, y: y)
+    }
 }
 
 struct OverlayFramePlacement {
-    private var x: CGFloat
-    private var topEdge: CGFloat
+    private var anchor: ScreenCorner
+    private var anchorX: CGFloat  // left edge for left anchors, right edge for right anchors
+    private var anchorY: CGFloat  // top edge for top anchors, bottom edge for bottom anchors
     private var restoredOrigin: CGPoint?
 
-    init(initialFrame: CGRect, restoredOrigin: CGPoint?) {
-        self.x = initialFrame.origin.x
-        self.topEdge = initialFrame.maxY
+    init(initialFrame: CGRect, restoredOrigin: CGPoint?, anchor: ScreenCorner = .topLeft) {
+        self.anchor = anchor
+        self.anchorX = Self.referenceX(for: initialFrame, anchor: anchor)
+        self.anchorY = Self.referenceY(for: initialFrame, anchor: anchor)
         self.restoredOrigin = restoredOrigin
+    }
+
+    mutating func setAnchor(_ newAnchor: ScreenCorner, currentFrame: CGRect) {
+        self.anchor = newAnchor
+        self.anchorX = Self.referenceX(for: currentFrame, anchor: newAnchor)
+        self.anchorY = Self.referenceY(for: currentFrame, anchor: newAnchor)
+        self.restoredOrigin = nil
     }
 
     mutating func frame(for size: CGSize) -> CGRect {
         if let restoredOrigin {
             self.restoredOrigin = nil
-            self.x = restoredOrigin.x
-            self.topEdge = restoredOrigin.y + size.height
-            return CGRect(origin: restoredOrigin, size: size)
+            let newFrame = CGRect(origin: restoredOrigin, size: size)
+            self.anchorX = Self.referenceX(for: newFrame, anchor: anchor)
+            self.anchorY = Self.referenceY(for: newFrame, anchor: anchor)
+            return newFrame
         }
 
-        return CGRect(
-            x: x,
-            y: topEdge - size.height,
-            width: size.width,
-            height: size.height
-        )
+        let originX: CGFloat
+        let originY: CGFloat
+        switch anchor {
+        case .topLeft:
+            originX = anchorX
+            originY = anchorY - size.height
+        case .topRight:
+            originX = anchorX - size.width
+            originY = anchorY - size.height
+        case .bottomLeft:
+            originX = anchorX
+            originY = anchorY
+        case .bottomRight:
+            originX = anchorX - size.width
+            originY = anchorY
+        }
+        return CGRect(x: originX, y: originY, width: size.width, height: size.height)
     }
 
     mutating func record(frame: CGRect) {
-        x = frame.origin.x
-        topEdge = frame.maxY
+        anchorX = Self.referenceX(for: frame, anchor: anchor)
+        anchorY = Self.referenceY(for: frame, anchor: anchor)
         restoredOrigin = nil
+    }
+
+    private static func referenceX(for frame: CGRect, anchor: ScreenCorner) -> CGFloat {
+        switch anchor {
+        case .topLeft, .bottomLeft: return frame.minX
+        case .topRight, .bottomRight: return frame.maxX
+        }
+    }
+
+    private static func referenceY(for frame: CGRect, anchor: ScreenCorner) -> CGFloat {
+        switch anchor {
+        case .topLeft, .topRight: return frame.maxY
+        case .bottomLeft, .bottomRight: return frame.minY
+        }
     }
 }
 
@@ -215,16 +271,19 @@ final class OverlayPanel: NSPanel {
         onSettings?()
     }
 
-    func positionTopLeft() {
-        guard let screen = NSScreen.main else { return }
-        let padding: CGFloat = 20
-        let frame = NSRect(
-            x: screen.visibleFrame.minX + padding,
-            y: screen.visibleFrame.maxY - 120 - padding,
-            width: 200,
-            height: 120
+    func positionInCorner(_ corner: ScreenCorner) {
+        guard let screen = self.screen ?? NSScreen.main else { return }
+        let origin = OverlayPosition.cornerOrigin(
+            corner: corner,
+            visibleFrame: screen.visibleFrame,
+            panelSize: frame.size
         )
-        setFrame(frame, display: true)
+        setFrameOrigin(origin)
+        OverlayPosition.save(origin)
+    }
+
+    func positionTopLeft() {
+        positionInCorner(.topLeft)
     }
 
     func ensureOnScreen() {
