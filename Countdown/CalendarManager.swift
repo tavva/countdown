@@ -41,7 +41,12 @@ final class CalendarManager {
     init(session: URLSession = .shared) {
         self.session = session
         self.calendarClient = CalendarClient(session: session)
-        loadStoredTokens()
+        // Skip keychain access under XCTest: the test host is headless and each
+        // rebuild produces a new binary hash, triggering a Keychain authorisation
+        // prompt that hangs on mach_msg waiting for user input that never comes.
+        if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil {
+            loadStoredTokens()
+        }
     }
 
     // MARK: - Auth
