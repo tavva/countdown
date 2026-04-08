@@ -8,10 +8,12 @@
 
 /* Begin PBXBuildFile section */
 		0CED5F18979CE96EB1B75F09 /* CalendarEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FEF41D033663CA3CCAAC9FD /* CalendarEvent.swift */; };
+		2C167C6FDBDD8BBA2C07FEA0 /* DisplayDetection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F3E68690F890C21BB1950E4 /* DisplayDetection.swift */; };
 		35A40DF1AB2528DDA738A03B /* CalendarManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B988D907A75DC1D34A694785 /* CalendarManager.swift */; };
 		39AE1F1B809F5804F4C77CCB /* CountdownModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2A473736B067B3F95F414E2 /* CountdownModel.swift */; };
 		4F6DA12C4FA28F42BC29FF4A /* PKCETests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6365FD594C6C7E93823E4C9A /* PKCETests.swift */; };
 		50E5E2FE69491A05486FFAFA /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B3C412D1DEBFA1D09AE26421 /* Assets.xcassets */; };
+		5F2C804B4229D39A69F38079 /* DisplayDetectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C059617C8B4D6F2304E2ECB2 /* DisplayDetectionTests.swift */; };
 		6126072DA56404B8C1D3D59C /* RedirectListener.swift in Sources */ = {isa = PBXBuildFile; fileRef = 362120747BD3E1AB65617E3E /* RedirectListener.swift */; };
 		6D34FB908EE5B15430C897C2 /* GoogleAuth.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FA1222DEFEE28A149F87AF7 /* GoogleAuth.swift */; };
 		760E2E49FDC280025C18DCF8 /* CalendarManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B2BA318ACDCF8C33C0D9EB5 /* CalendarManagerTests.swift */; };
@@ -52,6 +54,7 @@
 
 /* Begin PBXFileReference section */
 		05FA3E633BD58BBB4DA51F33 /* CircleHitTestViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CircleHitTestViewTests.swift; sourceTree = "<group>"; };
+		0F3E68690F890C21BB1950E4 /* DisplayDetection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisplayDetection.swift; sourceTree = "<group>"; };
 		11F8974166F1B12ECFD9F7F8 /* Config.plist.template */ = {isa = PBXFileReference; path = Config.plist.template; sourceTree = "<group>"; };
 		161DC129FE8C65823060677D /* Countdown.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Countdown.entitlements; sourceTree = "<group>"; };
 		1B915F61511E002C554FDADC /* CountdownApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CountdownApp.swift; sourceTree = "<group>"; };
@@ -80,6 +83,7 @@
 		B988D907A75DC1D34A694785 /* CalendarManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarManager.swift; sourceTree = "<group>"; };
 		BCAD7B96A8F665B3C4198BFE /* CountdownTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CountdownTests.swift; sourceTree = "<group>"; };
 		BE2B7F4112F14648B7DC7FC1 /* ConfigTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigTests.swift; sourceTree = "<group>"; };
+		C059617C8B4D6F2304E2ECB2 /* DisplayDetectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisplayDetectionTests.swift; sourceTree = "<group>"; };
 		C09221482A02E840785ABFF1 /* PKCE.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PKCE.swift; sourceTree = "<group>"; };
 		D39B9B347455AA7C2594B879 /* Config.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Config.plist; sourceTree = "<group>"; };
 		E21A7D32A8EC0FDC622DD4F4 /* UpdateManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateManager.swift; sourceTree = "<group>"; };
@@ -108,6 +112,7 @@
 				BE2B7F4112F14648B7DC7FC1 /* ConfigTests.swift */,
 				7B47B6164E2090CC918E63CA /* CountdownModelTests.swift */,
 				BCAD7B96A8F665B3C4198BFE /* CountdownTests.swift */,
+				C059617C8B4D6F2304E2ECB2 /* DisplayDetectionTests.swift */,
 				8F470913C55A73340956E201 /* GoogleAuthTests.swift */,
 				6E980546D86262155281AF6B /* KeychainTests.swift */,
 				AD5B4E38F0C31F5A732D74BD /* MockURLProtocol.swift */,
@@ -151,6 +156,7 @@
 				161DC129FE8C65823060677D /* Countdown.entitlements */,
 				1B915F61511E002C554FDADC /* CountdownApp.swift */,
 				F2A473736B067B3F95F414E2 /* CountdownModel.swift */,
+				0F3E68690F890C21BB1950E4 /* DisplayDetection.swift */,
 				5FA1222DEFEE28A149F87AF7 /* GoogleAuth.swift */,
 				6FB06D2EAA52269530B9268F /* Info.plist */,
 				A1E2497F6FF6AC1DE35E7D87 /* Keychain.swift */,
@@ -260,6 +266,7 @@
 				D676ECABA4C15FEBEA004AEF /* ConfigTests.swift in Sources */,
 				BE9CE7D70C8C2256AE0B5791 /* CountdownModelTests.swift in Sources */,
 				7FD80FA4DD8746A7FC2DE288 /* CountdownTests.swift in Sources */,
+				5F2C804B4229D39A69F38079 /* DisplayDetectionTests.swift in Sources */,
 				EFB158280CDBE8C298C11BFC /* GoogleAuthTests.swift in Sources */,
 				8C007A8C3533E46933E9FE6A /* KeychainTests.swift in Sources */,
 				811C51C01FE8F2B91FE291CB /* MockURLProtocol.swift in Sources */,
@@ -281,6 +288,7 @@
 				C4785A606F09912FD39A5069 /* Config.swift in Sources */,
 				F6C53A5A7E97A036401B8751 /* CountdownApp.swift in Sources */,
 				39AE1F1B809F5804F4C77CCB /* CountdownModel.swift in Sources */,
+				2C167C6FDBDD8BBA2C07FEA0 /* DisplayDetection.swift in Sources */,
 				6D34FB908EE5B15430C897C2 /* GoogleAuth.swift in Sources */,
 				C1942CD3381A4BDEE506A143 /* Keychain.swift in Sources */,
 				CA05675B1B218B2AF757927B /* OverlayPanel.swift in Sources */,
