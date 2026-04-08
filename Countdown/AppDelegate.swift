@@ -18,6 +18,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var panelPlacement = OverlayFramePlacement(initialFrame: .zero, restoredOrigin: nil)
     private var measurementCache = OverlayMeasurementCache()
     private var transitionState = OverlayTransitionState()
+    private var lastAutoReposition: Bool = false
+    private var lastRepositionCorner: ScreenCorner = .topLeft
 
     func applicationWillFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.prohibited)
@@ -77,6 +79,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let restoredOrigin = OverlayPosition.restore() != nil ? panel.frame.origin : nil
         panelPlacement = OverlayFramePlacement(initialFrame: panel.frame, restoredOrigin: restoredOrigin)
 
+        // Apply the effective compact mode based on current display configuration.
+        // This may update `compactMode`, which the observer will pick up on the next tick.
+        calendarManager.model.applyEffectiveMode(
+            hasExternalDisplay: DisplayDetection.hasExternalDisplay()
+        )
+
+        // Initialise change-tracking state for the observation handler.
+        lastAutoReposition = calendarManager.model.autoReposition
+        lastRepositionCorner = calendarManager.model.repositionCorner
+
+        // If auto-reposition is on, corner placement takes precedence over any
+        // saved manual position. Snap the panel and re-anchor the placement so
+        // subsequent content-size changes pin to the correct corner.
+        if calendarManager.model.autoReposition {
+            panel.positionInCorner(calendarManager.model.repositionCorner)
+            panelPlacement.setAnchor(
+                calendarManager.model.repositionCorner,
+                currentFrame: panel.frame
+            )
+        }
+
         NotificationCenter.default.addObserver(
             self, selector: #selector(screenDidChange),
             name: NSApplication.didChangeScreenParametersNotification, object: nil
@@ -92,8 +115,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func screenDidChange(_ notification: Notification) {
         guard let panel = overlayPanel else { return }
-        panel.ensureOnScreen()
-        panelPlacement.record(frame: panel.frame)
+        let model = calendarManager.model
+
+        // Auto mode may need to switch based on new display configuration.
+        model.applyEffectiveMode(hasExternalDisplay: DisplayDetection.hasExternalDisplay())
+
+        if model.autoReposition {
+            panel.positionInCorner(model.repositionCorner)
+            panelPlacement.setAnchor(model.repositionCorner, currentFrame: panel.frame)
+        } else {
+            panel.ensureOnScreen()
+            panelPlacement.record(frame: panel.frame)
+        }
     }
 
     private func observeOverlayState() {
@@ -104,12 +137,46 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             _ = calendarManager.model.isIdle
             _ = calendarManager.model.isLoading
             _ = calendarManager.model.compactMode
+            _ = calendarManager.model.sizeMode
+            _ = calendarManager.model.autoReposition
+            _ = calendarManager.model.repositionCorner
         } onChange: { [weak self] in
             Task { @MainActor [weak self] in
-                self?.updatePanel()
+                self?.handleModelChange()
                 self?.observeOverlayState()
             }
         }
+    }
+
+    @MainActor
+    private func handleModelChange() {
+        let model = calendarManager.model
+        guard let panel = overlayPanel else {
+            updatePanel()
+            return
+        }
+
+        // Keep effective compactMode in sync with sizeMode + display state.
+        model.applyEffectiveMode(hasExternalDisplay: DisplayDetection.hasExternalDisplay())
+
+        let autoRepositionChanged = model.autoReposition != lastAutoReposition
+        let cornerChanged = model.repositionCorner != lastRepositionCorner
+
+        if autoRepositionChanged || (model.autoReposition && cornerChanged) {
+            if model.autoReposition {
+                panel.positionInCorner(model.repositionCorner)
+                panelPlacement.setAnchor(model.repositionCorner, currentFrame: panel.frame)
+            } else {
+                // Auto-reposition just turned off — return to default top-left anchoring
+                // using wherever the panel currently is as the reference point.
+                panelPlacement.setAnchor(.topLeft, currentFrame: panel.frame)
+            }
+        }
+
+        lastAutoReposition = model.autoReposition
+        lastRepositionCorner = model.repositionCorner
+
+        updatePanel()
     }
 
     private func showSettingsPanel() {
