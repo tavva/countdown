@@ -1,5 +1,5 @@
 // ABOUTME: Floating borderless panel that displays the countdown circle on the desktop.
-// ABOUTME: Positions itself in the top-left corner (or saved position) and stays above all windows.
+// ABOUTME: Positions itself in a configured corner (or saved position) and stays above all windows.
 
 import AppKit
 import SwiftUI
