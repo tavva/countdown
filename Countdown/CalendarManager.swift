@@ -44,10 +44,20 @@ final class CalendarManager {
         // Skip keychain access under XCTest: the test host is headless and each
         // rebuild produces a new binary hash, triggering a Keychain authorisation
         // prompt that hangs on mach_msg waiting for user input that never comes.
-        if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil {
+        // Also skip in --preview-settings mode so a debug build can render the
+        // settings UI without triggering a Keychain prompt it cannot satisfy.
+        let isTest = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+        let isPreview = CommandLine.arguments.contains("--preview-settings")
+        if !isTest && !isPreview {
             loadStoredTokens()
         }
     }
+
+    #if DEBUG
+    func setPreviewCalendars(_ calendars: [CalendarInfo]) {
+        self.calendars = calendars
+    }
+    #endif
 
     // MARK: - Auth
 
@@ -93,6 +103,7 @@ final class CalendarManager {
         calendars = []
         UserDefaults.standard.removeObject(forKey: "enabledCalendarIDs")
 
+        TokenStore.delete()
         try? Keychain.delete(service: keychainService, account: keychainAccount)
         stopPolling()
     }
@@ -121,6 +132,20 @@ final class CalendarManager {
         }
         enabledCalendarIDs = enabled
         poll()
+    }
+
+    /// Drops any stored calendar IDs that are no longer in the fetched list,
+    /// e.g. after Google reissues IDs for imported feeds following a re-auth.
+    /// Pruning to an empty set falls back to "all enabled" rather than leaving
+    /// the user with every toggle off because none of the IDs match.
+    private func pruneStaleEnabledCalendarIDs() {
+        let stored = enabledCalendarIDs
+        guard !stored.isEmpty else { return }
+        let valid = Set(calendars.map(\.id))
+        let pruned = stored.intersection(valid)
+        if pruned != stored {
+            enabledCalendarIDs = pruned
+        }
     }
 
     func setMeetingsOnly(_ value: Bool) {
@@ -172,6 +197,7 @@ final class CalendarManager {
 
             let fetchedCalendars = try await calendarClient.fetchCalendars(accessToken: token)
             calendars = fetchedCalendars
+            pruneStaleEnabledCalendarIDs()
 
             let now = Date()
             let end = now.addingTimeInterval(60 * 60)
@@ -268,11 +294,14 @@ final class CalendarManager {
             tokenExpiry: tokenExpiry
         )
         guard let data = try? JSONEncoder().encode(stored) else { return }
-        try? Keychain.save(data, service: keychainService, account: keychainAccount)
+        TokenStore.save(data)
     }
 
     private func loadStoredTokens() {
-        guard let data = try? Keychain.load(service: keychainService, account: keychainAccount),
+        let data = TokenStore.load()
+            ?? TokenStore.migrateFromKeychain(service: keychainService, account: keychainAccount)
+
+        guard let data,
               let stored = try? JSONDecoder().decode(StoredTokens.self, from: data)
         else { return }
 

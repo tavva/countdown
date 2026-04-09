@@ -26,6 +26,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        #if DEBUG
+        if CommandLine.arguments.contains("--preview-settings") {
+            setupSettingsPreview()
+            return
+        }
+        #endif
+
         NSApp.setActivationPolicy(.accessory)
 
         let circleContent = OverlayContent(manager: calendarManager, onContentHeight: { [weak self] state, height in
@@ -178,6 +185,93 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         updatePanel()
     }
+
+    #if DEBUG
+    private var settingsPreviewWindow: NSWindow?
+
+    private static let previewCalendars: [CalendarInfo] = [
+        CalendarInfo(id: "1", summary: "Work", backgroundColor: "#4285F4"),
+        CalendarInfo(id: "2", summary: "Personal", backgroundColor: "#34A853"),
+        CalendarInfo(id: "3", summary: "Side projects", backgroundColor: "#FBBC04"),
+        CalendarInfo(id: "4", summary: "Travel", backgroundColor: "#EA4335"),
+        CalendarInfo(id: "5", summary: "Family", backgroundColor: "#A142F4"),
+        CalendarInfo(id: "6", summary: "Football fixtures", backgroundColor: "#16A765"),
+        CalendarInfo(id: "7", summary: "Birthdays", backgroundColor: "#F09300"),
+        CalendarInfo(id: "8", summary: "UK Holidays", backgroundColor: "#7BD148"),
+        CalendarInfo(id: "9", summary: "Reading group", backgroundColor: "#B99AFF"),
+        CalendarInfo(id: "10", summary: "Gym", backgroundColor: "#FA573C"),
+        CalendarInfo(id: "11", summary: "Travel — Mum", backgroundColor: "#FF7537"),
+        CalendarInfo(id: "12", summary: "Volunteering", backgroundColor: "#42D692"),
+    ]
+
+    private func setupSettingsPreview() {
+        NSApp.setActivationPolicy(.regular)
+
+        let state = ProcessInfo.processInfo.environment["PREVIEW_STATE"] ?? "empty"
+
+        calendarManager.config = Config(clientID: "preview", clientSecret: "preview")
+
+        switch state {
+        case "signed-out":
+            calendarManager.isSignedIn = false
+            calendarManager.setPreviewCalendars([])
+        case "with-event":
+            calendarManager.isSignedIn = true
+            calendarManager.setPreviewCalendars(Self.previewCalendars)
+            calendarManager.model.nextEvent = CalendarEvent(
+                id: "preview-event",
+                summary: "Sprint planning",
+                startTime: Date().addingTimeInterval(8 * 60),
+                endTime: Date().addingTimeInterval(38 * 60),
+                hasOtherAttendees: true
+            )
+        case "no-config":
+            calendarManager.config = nil
+            calendarManager.isSignedIn = false
+            calendarManager.setPreviewCalendars([])
+        default: // "empty"
+            calendarManager.isSignedIn = true
+            calendarManager.setPreviewCalendars(Self.previewCalendars)
+        }
+
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 320, height: 820),
+            styleMask: [.titled, .closable, .resizable],
+            backing: .buffered,
+            defer: false
+        )
+        window.title = "Settings Preview · \(state)"
+        let hostingView = NSHostingView(
+            rootView: SettingsView(manager: calendarManager, updateManager: updateManager, maxContentHeight: nil)
+        )
+        window.contentView = hostingView
+
+        if let screen = NSScreen.main {
+            let visible = screen.visibleFrame
+            let size = window.frame.size
+            let origin = NSPoint(
+                x: visible.minX + 60,
+                y: visible.maxY - size.height - 60
+            )
+            window.setFrameOrigin(origin)
+        }
+
+        window.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+
+        // Log the actual rect using top-left origin in the global display coordinate
+        // system so a screencapture -R command can target it directly.
+        if let screen = NSScreen.main {
+            let frame = window.frame
+            let topY = screen.frame.maxY - frame.maxY
+            FileHandle.standardError.write(
+                "PREVIEW_RECT \(Int(frame.minX)) \(Int(topY)) \(Int(frame.width)) \(Int(frame.height))\n".data(using: .utf8)!
+            )
+        }
+
+        settingsPreviewWindow = window
+    }
+    #endif
 
     private func showSettingsPanel() {
         if let existing = settingsPanel, existing.isVisible {

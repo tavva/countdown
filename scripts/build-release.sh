@@ -29,7 +29,10 @@ fi
 echo "==> Setting version to ${VERSION}..."
 /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${VERSION}" "Countdown/Info.plist"
 /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${VERSION}" "Countdown/Info.plist"
-git add Countdown/Info.plist
+# Keep project.yml in sync so `xcodegen generate` doesn't revert Info.plist.
+/usr/bin/sed -i '' -E "s/(CFBundleShortVersionString: )[0-9.]+/\1${VERSION}/" project.yml
+/usr/bin/sed -i '' -E "s/(CFBundleVersion: )[0-9.]+/\1${VERSION}/" project.yml
+git add Countdown/Info.plist project.yml
 git commit -m "Bump version to ${VERSION}"
 
 rm -rf "$BUILD_DIR"

@@ -70,6 +70,34 @@ Users must provide Google OAuth credentials in `Countdown/Config.plist` (see `Co
 
 Tests use Swift Testing framework (`@Suite`, `@Test`, `#expect`) — not XCTest. HTTP calls are mocked via `MockURLProtocol` which intercepts `URLSession` requests. Model test suites use `.serialized` to prevent concurrency issues.
 
+## Settings UI Preview Harness
+
+For iterating on `SettingsView` visually without going through the full menu-bar flow (which requires a code-signing identity that matches the Keychain entries), the debug build accepts a `--preview-settings` launch argument. When present, `AppDelegate` skips the overlay/polling/keychain path and instead opens `SettingsView` in a standalone resizable `NSWindow` populated with mock state.
+
+```bash
+# Build debug
+xcodebuild -project Countdown.xcodeproj -scheme Countdown -configuration Debug build
+
+# Launch with preview arg (kill any running instance first)
+pkill -x Countdown
+"$(xcodebuild -project Countdown.xcodeproj -scheme Countdown -configuration Debug -showBuildSettings 2>/dev/null | awk '/CONFIGURATION_BUILD_DIR/ {print $3}')/Countdown.app/Contents/MacOS/Countdown" --preview-settings &
+```
+
+The preview path:
+- Skips `loadStoredTokens()` so there's no Keychain prompt for the unsigned debug build
+- Sets fake `CalendarManager` state via the `#if DEBUG` `setPreviewCalendars(_:)` helper
+- Reads a `PREVIEW_STATE` env var to switch between `empty` (default), `with-event`, `signed-out`, `no-config`
+- Logs a `PREVIEW_RECT <x> <y> <w> <h>` line to stderr in the screencapture coordinate system, ready to feed into `screencapture -R`
+- Lives entirely behind `#if DEBUG`, so it's compiled out of release builds
+
+To capture the window, read the rect from stderr then:
+
+```bash
+screencapture -x -R<x>,<y>,<w>,<h> /tmp/settings.png
+```
+
+Set `PREVIEW_STATE=with-event` (etc.) before launching to exercise other states. Mock calendars and the in-DEBUG helper live in `AppDelegate.swift` (`setupSettingsPreview` + `previewCalendars`).
+
 ## Project Generation
 
 The Xcode project is generated from `project.yml` using XcodeGen. Edit `project.yml` for target/dependency changes, then run `xcodegen generate`.
