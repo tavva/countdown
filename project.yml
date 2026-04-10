@@ -22,8 +22,8 @@ targets:
       path: Countdown/Info.plist
       properties:
         LSUIElement: true
-        CFBundleShortVersionString: 1.6.1
-        CFBundleVersion: 1.6.1
+        CFBundleShortVersionString: 1.6.2
+        CFBundleVersion: 1.6.2
         SUEnableAutomaticChecks: true
         SUFeedURL: https://tavva.github.io/countdown/appcast.xml
         SUPublicEDKey: nT9yOEpXACVlDmRZXGGXjQWNNp38iwH4V3OOJyjNlsc=
