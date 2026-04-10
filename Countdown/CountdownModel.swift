@@ -30,6 +30,12 @@ final class CountdownModel {
     var hideDeclinedEvents: Bool {
         didSet { defaults.set(hideDeclinedEvents, forKey: DefaultsKey.hideDeclinedEvents) }
     }
+    /// When true, filters out non-meeting Google Calendar event types
+    /// (tasks, birthdays, out-of-office, working location, Gmail-extracted
+    /// events). Keeps `default` and `focusTime` events.
+    var hideTasksAndBirthdays: Bool {
+        didSet { defaults.set(hideTasksAndBirthdays, forKey: DefaultsKey.hideTasksAndBirthdays) }
+    }
 
     private(set) var shouldShowOverlay: Bool = true
     private(set) var minutesRemaining: Int = 0
@@ -66,6 +72,10 @@ final class CountdownModel {
         didSet { defaults.set(showingEventDetails, forKey: DefaultsKey.showingEventDetails) }
     }
 
+    static let nonMeetingEventTypes: Set<String> = [
+        "task", "birthday", "fromGmail", "outOfOffice", "workingLocation",
+    ]
+
     private var dismissedEventID: String?
     private var flashAcknowledgedEventID: String?
 
@@ -77,6 +87,8 @@ final class CountdownModel {
         } else {
             self.hideDeclinedEvents = defaults.bool(forKey: DefaultsKey.hideDeclinedEvents)
         }
+
+        self.hideTasksAndBirthdays = defaults.bool(forKey: DefaultsKey.hideTasksAndBirthdays)
 
         // Migrate: if sizeMode isn't set but legacy compactMode is, derive sizeMode from it.
         let resolvedMode: SizeMode
@@ -166,6 +178,11 @@ final class CountdownModel {
             return
         }
 
+        if hideTasksAndBirthdays && CountdownModel.nonMeetingEventTypes.contains(event.eventType ?? "") {
+            setIdleOrHidden()
+            return
+        }
+
         if event.id == dismissedEventID {
             setIdleOrHidden()
             return
@@ -218,6 +235,7 @@ final class CountdownModel {
 private enum DefaultsKey {
     static let meetingsOnly = "meetingsOnly"
     static let hideDeclinedEvents = "hideDeclinedEvents"
+    static let hideTasksAndBirthdays = "hideTasksAndBirthdays"
     static let compactMode = "compactMode"
     static let showingEventDetails = "showingEventDetails"
     static let sizeMode = "sizeMode"

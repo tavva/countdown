@@ -10,6 +10,7 @@ struct CountdownModelTests {
     private let _snapshot = DefaultsSnapshot(keys: [
         "meetingsOnly", "showingEventDetails", "compactMode",
         "hideDeclinedEvents", "sizeMode", "autoReposition", "repositionCorner",
+        "hideTasksAndBirthdays",
     ])
 
     // MARK: - Loading state
@@ -647,6 +648,141 @@ struct CountdownModelTests {
 
         let model2 = CountdownModel()
         #expect(model2.hideDeclinedEvents == false)
+    }
+
+    // MARK: - Hide tasks and birthdays
+
+    @Test func hideTasksAndBirthdaysDefaultsToFalse() {
+        UserDefaults.standard.removeObject(forKey: "hideTasksAndBirthdays")
+        let model = CountdownModel()
+        #expect(model.hideTasksAndBirthdays == false)
+    }
+
+    @Test func hideTasksAndBirthdaysPersists() {
+        let model = CountdownModel()
+        model.hideTasksAndBirthdays = true
+        #expect(model.hideTasksAndBirthdays == true)
+
+        let model2 = CountdownModel()
+        #expect(model2.hideTasksAndBirthdays == true)
+    }
+
+    @Test func hideTasksAndBirthdaysFiltersTaskEventType() {
+        let model = CountdownModel()
+        model.setEvents([])
+        model.hideTasksAndBirthdays = true
+        model.nextEvent = CalendarEvent(
+            id: "1",
+            summary: "Buy milk",
+            startTime: Date().addingTimeInterval(30 * 60),
+            endTime: Date().addingTimeInterval(60 * 60),
+            hasOtherAttendees: false,
+            eventType: "task"
+        )
+        model.updateState()
+        #expect(model.shouldShowOverlay == true)
+        #expect(model.isIdle == true)
+    }
+
+    @Test func hideTasksAndBirthdaysFiltersBirthdayEventType() {
+        let model = CountdownModel()
+        model.setEvents([])
+        model.hideTasksAndBirthdays = true
+        model.nextEvent = CalendarEvent(
+            id: "1",
+            summary: "Alice's birthday",
+            startTime: Date().addingTimeInterval(30 * 60),
+            endTime: Date().addingTimeInterval(60 * 60),
+            hasOtherAttendees: false,
+            eventType: "birthday"
+        )
+        model.updateState()
+        #expect(model.isIdle == true)
+    }
+
+    @Test func hideTasksAndBirthdaysFiltersOutOfOfficeFromGmailWorkingLocation() {
+        let model = CountdownModel()
+        model.setEvents([])
+        model.hideTasksAndBirthdays = true
+
+        for type in ["outOfOffice", "fromGmail", "workingLocation"] {
+            model.nextEvent = CalendarEvent(
+                id: type,
+                summary: "Auto event",
+                startTime: Date().addingTimeInterval(30 * 60),
+                endTime: Date().addingTimeInterval(60 * 60),
+                hasOtherAttendees: false,
+                eventType: type
+            )
+            model.updateState()
+            #expect(model.isIdle == true, "Expected \(type) to be filtered")
+        }
+    }
+
+    @Test func hideTasksAndBirthdaysKeepsDefaultEventType() {
+        let model = CountdownModel()
+        model.setEvents([])
+        model.hideTasksAndBirthdays = true
+        model.nextEvent = CalendarEvent(
+            id: "1",
+            summary: "Standup",
+            startTime: Date().addingTimeInterval(30 * 60),
+            endTime: Date().addingTimeInterval(60 * 60),
+            hasOtherAttendees: true,
+            eventType: "default"
+        )
+        model.updateState()
+        #expect(model.isIdle == false)
+    }
+
+    @Test func hideTasksAndBirthdaysKeepsFocusTime() {
+        let model = CountdownModel()
+        model.setEvents([])
+        model.meetingsOnly = false
+        model.hideTasksAndBirthdays = true
+        model.nextEvent = CalendarEvent(
+            id: "1",
+            summary: "Focus block",
+            startTime: Date().addingTimeInterval(30 * 60),
+            endTime: Date().addingTimeInterval(60 * 60),
+            hasOtherAttendees: false,
+            eventType: "focusTime"
+        )
+        model.updateState()
+        #expect(model.isIdle == false)
+    }
+
+    @Test func hideTasksAndBirthdaysKeepsNilEventType() {
+        let model = CountdownModel()
+        model.setEvents([])
+        model.hideTasksAndBirthdays = true
+        model.nextEvent = CalendarEvent(
+            id: "1",
+            summary: "Legacy event",
+            startTime: Date().addingTimeInterval(30 * 60),
+            endTime: Date().addingTimeInterval(60 * 60),
+            hasOtherAttendees: true,
+            eventType: nil
+        )
+        model.updateState()
+        #expect(model.isIdle == false)
+    }
+
+    @Test func hideTasksAndBirthdaysOffShowsTaskEvents() {
+        let model = CountdownModel()
+        model.setEvents([])
+        model.meetingsOnly = false
+        model.hideTasksAndBirthdays = false
+        model.nextEvent = CalendarEvent(
+            id: "1",
+            summary: "Buy milk",
+            startTime: Date().addingTimeInterval(30 * 60),
+            endTime: Date().addingTimeInterval(60 * 60),
+            hasOtherAttendees: false,
+            eventType: "task"
+        )
+        model.updateState()
+        #expect(model.isIdle == false)
     }
 
     // MARK: - Size mode

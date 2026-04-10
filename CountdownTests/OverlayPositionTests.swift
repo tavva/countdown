@@ -584,6 +584,7 @@ struct OverlayLayoutStateModelTests {
     private let _snapshot = DefaultsSnapshot(keys: [
         "meetingsOnly", "showingEventDetails", "compactMode",
         "hideDeclinedEvents", "sizeMode", "autoReposition", "repositionCorner",
+        "hideTasksAndBirthdays",
     ])
 
     @Test func compactIdleWithDetailsShowsEmptyMessage() {
