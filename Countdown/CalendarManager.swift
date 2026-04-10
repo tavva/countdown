@@ -160,6 +160,12 @@ final class CalendarManager {
         poll()
     }
 
+    func setHideTasksAndBirthdays(_ value: Bool) {
+        model.hideTasksAndBirthdays = value
+        model.updateState()
+        poll()
+    }
+
     // MARK: - Polling
 
     func startPolling(skipInitialFetch: Bool = false) {
@@ -227,6 +233,11 @@ final class CalendarManager {
             if model.hideDeclinedEvents {
                 filtered = filtered.filter {
                     !$0.summary.hasPrefix("Declined:") && !$0.summary.hasPrefix("Cancelled:")
+                }
+            }
+            if model.hideTasksAndBirthdays {
+                filtered = filtered.filter {
+                    !CountdownModel.nonMeetingEventTypes.contains($0.eventType ?? "")
                 }
             }
 

@@ -39,7 +39,7 @@ private final class ManagerMockProtocol: URLProtocol, @unchecked Sendable {
 struct CalendarManagerTests {
     private let _snapshot = DefaultsSnapshot(keys: [
         "meetingsOnly", "enabledCalendarIDs",
-        "hideDeclinedEvents",
+        "hideDeclinedEvents", "hideTasksAndBirthdays",
     ])
 
     @Test @MainActor func setMeetingsOnlyUpdatesOverlayImmediately() {
@@ -195,6 +195,90 @@ struct CalendarManagerTests {
 
         #expect(manager.model.hideDeclinedEvents == true)
         #expect(manager.model.isIdle == true)
+    }
+
+    @Test @MainActor func setHideTasksAndBirthdaysUpdatesOverlayImmediately() {
+        let manager = CalendarManager()
+        manager.model.setEvents([])
+        manager.model.meetingsOnly = false
+        manager.model.hideTasksAndBirthdays = false
+        manager.model.nextEvent = CalendarEvent(
+            id: "1",
+            summary: "Buy milk",
+            startTime: Date().addingTimeInterval(30 * 60),
+            endTime: Date().addingTimeInterval(60 * 60),
+            hasOtherAttendees: false,
+            eventType: "task"
+        )
+        manager.model.updateState()
+        #expect(manager.model.isIdle == false)
+
+        manager.setHideTasksAndBirthdays(true)
+
+        #expect(manager.model.hideTasksAndBirthdays == true)
+        #expect(manager.model.isIdle == true)
+    }
+
+    @Test @MainActor func fetchEventsFiltersHiddenEventTypesBeforeSelectingNextEvent() async {
+        let session = ManagerMockProtocol.makeSession()
+        let manager = CalendarManager(session: session)
+        manager.config = Config(clientID: "test-id", clientSecret: "test-secret")
+        manager.isSignedIn = true
+        manager.refreshToken = "valid-refresh"
+        manager.accessToken = "valid-token"
+        manager.tokenExpiry = Date().addingTimeInterval(3600)
+        manager.model.meetingsOnly = false
+        manager.model.hideTasksAndBirthdays = true
+
+        // Task starts earlier than the meeting. Without the pre-filter,
+        // CountdownModel.setEvents would pick the task as nextEvent. With
+        // the pre-filter the task is dropped and the meeting wins.
+        let now = Date()
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime]
+        let taskStart = formatter.string(from: now.addingTimeInterval(10 * 60))
+        let taskEnd = formatter.string(from: now.addingTimeInterval(15 * 60))
+        let meetingStart = formatter.string(from: now.addingTimeInterval(20 * 60))
+        let meetingEnd = formatter.string(from: now.addingTimeInterval(50 * 60))
+
+        await ManagerMockProtocol.requestHandler.set(forHost: "www.googleapis.com") { request in
+            let path = request.url!.path
+            let json: String
+            if path.contains("/calendarList") {
+                json = ##"{"items":[{"id":"primary","summary":"Work","backgroundColor":"#4285f4"}]}"##
+            } else {
+                json = """
+                {
+                    "items": [
+                        {
+                            "id": "task1",
+                            "summary": "Buy milk",
+                            "status": "confirmed",
+                            "eventType": "task",
+                            "start": { "dateTime": "\(taskStart)" },
+                            "end": { "dateTime": "\(taskEnd)" }
+                        },
+                        {
+                            "id": "meeting1",
+                            "summary": "Standup",
+                            "status": "confirmed",
+                            "eventType": "default",
+                            "start": { "dateTime": "\(meetingStart)" },
+                            "end": { "dateTime": "\(meetingEnd)" }
+                        }
+                    ]
+                }
+                """
+            }
+            let response = HTTPURLResponse(
+                url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil
+            )!
+            return (response, Data(json.utf8))
+        }
+
+        await manager.fetchEvents()
+
+        #expect(manager.model.nextEvent?.id == "meeting1")
     }
 
     @Test @MainActor func setMeetingsOnlyToFalseShowsSoloEvents() {
