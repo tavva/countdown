@@ -11,6 +11,7 @@ struct RawCalendarEvent: Decodable {
     let id: String
     let summary: String?
     let status: String?
+    let eventType: String?
     let start: EventDateTime?
     let end: EventDateTime?
     let attendees: [EventAttendee]?
@@ -49,6 +50,23 @@ struct CalendarEvent {
     let startTime: Date
     let endTime: Date
     let hasOtherAttendees: Bool
+    let eventType: String?
+
+    init(
+        id: String,
+        summary: String,
+        startTime: Date,
+        endTime: Date,
+        hasOtherAttendees: Bool,
+        eventType: String? = nil
+    ) {
+        self.id = id
+        self.summary = summary
+        self.startTime = startTime
+        self.endTime = endTime
+        self.hasOtherAttendees = hasOtherAttendees
+        self.eventType = eventType
+    }
 }
 
 struct CalendarListResponse: Decodable {

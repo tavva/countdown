@@ -66,7 +66,8 @@ final class CalendarClient: Sendable {
                 summary: raw.summary ?? "(No title)",
                 startTime: startTime,
                 endTime: endTime,
-                hasOtherAttendees: !otherAttendees.isEmpty
+                hasOtherAttendees: !otherAttendees.isEmpty,
+                eventType: raw.eventType
             )
         }
     }

@@ -47,6 +47,56 @@ struct CalendarClientTests {
         #expect(events[0].endTime == ISO8601DateFormatter().date(from: "2026-03-01T10:30:00Z"))
     }
 
+    @Test func parsesEventType() async throws {
+        let json = """
+        {
+            "items": [
+                {
+                    "id": "taskevt",
+                    "summary": "Buy milk",
+                    "status": "confirmed",
+                    "eventType": "task",
+                    "start": { "dateTime": "2026-03-01T09:00:00Z" },
+                    "end": { "dateTime": "2026-03-01T09:15:00Z" }
+                },
+                {
+                    "id": "defaultevt",
+                    "summary": "Standup",
+                    "status": "confirmed",
+                    "eventType": "default",
+                    "start": { "dateTime": "2026-03-01T10:00:00Z" },
+                    "end": { "dateTime": "2026-03-01T10:30:00Z" }
+                },
+                {
+                    "id": "noeventtype",
+                    "summary": "Legacy event",
+                    "status": "confirmed",
+                    "start": { "dateTime": "2026-03-01T11:00:00Z" },
+                    "end": { "dateTime": "2026-03-01T11:30:00Z" }
+                }
+            ]
+        }
+        """
+        await MockURLProtocol.requestHandler.set(forHost: "www.googleapis.com") { request in
+            let response = HTTPURLResponse(
+                url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil
+            )!
+            return (response, Data(json.utf8))
+        }
+
+        let client = CalendarClient(session: session)
+        let events = try await client.fetchEvents(
+            accessToken: "test-token",
+            from: Date(),
+            to: Date().addingTimeInterval(3600)
+        )
+
+        #expect(events.count == 3)
+        #expect(events.first { $0.id == "taskevt" }?.eventType == "task")
+        #expect(events.first { $0.id == "defaultevt" }?.eventType == "default")
+        #expect(events.first { $0.id == "noeventtype" }?.eventType == nil)
+    }
+
     @Test func filtersAllDayEvents() async throws {
         let json = """
         {
