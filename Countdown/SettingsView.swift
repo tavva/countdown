@@ -144,6 +144,7 @@ struct SettingsView: View {
             }
 
             inlineToggle("Hide declined & cancelled", isOn: hideDeclinedBinding)
+            inlineToggle("Hide tasks & birthdays", isOn: hideTasksAndBirthdaysBinding)
         }
     }
 
@@ -387,6 +388,13 @@ struct SettingsView: View {
         Binding(
             get: { manager.model.hideDeclinedEvents },
             set: { manager.setHideDeclinedEvents($0) }
+        )
+    }
+
+    private var hideTasksAndBirthdaysBinding: Binding<Bool> {
+        Binding(
+            get: { manager.model.hideTasksAndBirthdays },
+            set: { manager.setHideTasksAndBirthdays($0) }
         )
     }
 
