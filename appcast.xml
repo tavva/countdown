@@ -122,5 +122,15 @@
                  type="application/octet-stream"
                  sparkle:edSignature="ZOeeXrvdShl+Ecrmp08xUJRDqlKhH1gcLkzXbCBRfJQlID8SCqv8ts3ZgMIZ4GD1DdA5WwdePq8rAZS6z/ntBg==" length="3324278" />
     </item>
+    <item>
+      <title>Version 1.6.2</title>
+      <pubDate>Fri, 10 Apr 2026 10:48:15 +0100</pubDate>
+      <sparkle:version>1.6.2</sparkle:version>
+      <sparkle:shortVersionString>1.6.2</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <enclosure url="https://github.com/tavva/countdown/releases/download/v1.6.2/Countdown-1.6.2.dmg"
+                 type="application/octet-stream"
+                 sparkle:edSignature="K0NadQdG0TblQ4pNUwr/MtGj67+wHK2p4g6oK7hFgFSFDhnNQURn0IxepywbORQlRl2zJBM40Jhh8VcHCoMEBw==" length="3330930" />
+    </item>
   </channel>
 </rss>
