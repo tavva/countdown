@@ -36,6 +36,10 @@ final class CountdownModel {
     var hideTasksAndBirthdays: Bool {
         didSet { defaults.set(hideTasksAndBirthdays, forKey: DefaultsKey.hideTasksAndBirthdays) }
     }
+    /// When true, filters out Google Calendar `focusTime` events.
+    var hideFocusTime: Bool {
+        didSet { defaults.set(hideFocusTime, forKey: DefaultsKey.hideFocusTime) }
+    }
 
     private(set) var shouldShowOverlay: Bool = true
     private(set) var minutesRemaining: Int = 0
@@ -89,6 +93,7 @@ final class CountdownModel {
         }
 
         self.hideTasksAndBirthdays = defaults.bool(forKey: DefaultsKey.hideTasksAndBirthdays)
+        self.hideFocusTime = defaults.bool(forKey: DefaultsKey.hideFocusTime)
 
         // Migrate: if sizeMode isn't set but legacy compactMode is, derive sizeMode from it.
         let resolvedMode: SizeMode
@@ -183,6 +188,11 @@ final class CountdownModel {
             return
         }
 
+        if hideFocusTime && event.eventType == "focusTime" {
+            setIdleOrHidden()
+            return
+        }
+
         if event.id == dismissedEventID {
             setIdleOrHidden()
             return
@@ -236,6 +246,7 @@ private enum DefaultsKey {
     static let meetingsOnly = "meetingsOnly"
     static let hideDeclinedEvents = "hideDeclinedEvents"
     static let hideTasksAndBirthdays = "hideTasksAndBirthdays"
+    static let hideFocusTime = "hideFocusTime"
     static let compactMode = "compactMode"
     static let showingEventDetails = "showingEventDetails"
     static let sizeMode = "sizeMode"

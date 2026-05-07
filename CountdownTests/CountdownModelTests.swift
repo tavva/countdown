@@ -10,7 +10,7 @@ struct CountdownModelTests {
     private let _snapshot = DefaultsSnapshot(keys: [
         "meetingsOnly", "showingEventDetails", "compactMode",
         "hideDeclinedEvents", "sizeMode", "autoReposition", "repositionCorner",
-        "hideTasksAndBirthdays",
+        "hideTasksAndBirthdays", "hideFocusTime",
     ])
 
     // MARK: - Loading state
@@ -780,6 +780,74 @@ struct CountdownModelTests {
             endTime: Date().addingTimeInterval(60 * 60),
             hasOtherAttendees: false,
             eventType: "task"
+        )
+        model.updateState()
+        #expect(model.isIdle == false)
+    }
+
+    // MARK: - Hide focus time
+
+    @Test func hideFocusTimeDefaultsToFalse() {
+        UserDefaults.standard.removeObject(forKey: "hideFocusTime")
+        let model = CountdownModel()
+        #expect(model.hideFocusTime == false)
+    }
+
+    @Test func hideFocusTimePersists() {
+        let model = CountdownModel()
+        model.hideFocusTime = true
+        #expect(model.hideFocusTime == true)
+
+        let model2 = CountdownModel()
+        #expect(model2.hideFocusTime == true)
+    }
+
+    @Test func hideFocusTimeFiltersFocusTimeEventType() {
+        let model = CountdownModel()
+        model.setEvents([])
+        model.meetingsOnly = false
+        model.hideFocusTime = true
+        model.nextEvent = CalendarEvent(
+            id: "1",
+            summary: "Focus block",
+            startTime: Date().addingTimeInterval(30 * 60),
+            endTime: Date().addingTimeInterval(60 * 60),
+            hasOtherAttendees: false,
+            eventType: "focusTime"
+        )
+        model.updateState()
+        #expect(model.shouldShowOverlay == true)
+        #expect(model.isIdle == true)
+    }
+
+    @Test func hideFocusTimeKeepsDefaultEventType() {
+        let model = CountdownModel()
+        model.setEvents([])
+        model.hideFocusTime = true
+        model.nextEvent = CalendarEvent(
+            id: "1",
+            summary: "Standup",
+            startTime: Date().addingTimeInterval(30 * 60),
+            endTime: Date().addingTimeInterval(60 * 60),
+            hasOtherAttendees: true,
+            eventType: "default"
+        )
+        model.updateState()
+        #expect(model.isIdle == false)
+    }
+
+    @Test func hideFocusTimeOffShowsFocusTimeEvents() {
+        let model = CountdownModel()
+        model.setEvents([])
+        model.meetingsOnly = false
+        model.hideFocusTime = false
+        model.nextEvent = CalendarEvent(
+            id: "1",
+            summary: "Focus block",
+            startTime: Date().addingTimeInterval(30 * 60),
+            endTime: Date().addingTimeInterval(60 * 60),
+            hasOtherAttendees: false,
+            eventType: "focusTime"
         )
         model.updateState()
         #expect(model.isIdle == false)
