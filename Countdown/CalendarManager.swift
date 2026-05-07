@@ -166,6 +166,12 @@ final class CalendarManager {
         poll()
     }
 
+    func setHideFocusTime(_ value: Bool) {
+        model.hideFocusTime = value
+        model.updateState()
+        poll()
+    }
+
     // MARK: - Polling
 
     func startPolling(skipInitialFetch: Bool = false) {
@@ -239,6 +245,9 @@ final class CalendarManager {
                 filtered = filtered.filter {
                     !CountdownModel.nonMeetingEventTypes.contains($0.eventType ?? "")
                 }
+            }
+            if model.hideFocusTime {
+                filtered = filtered.filter { $0.eventType != "focusTime" }
             }
 
             model.setEvents(filtered)
