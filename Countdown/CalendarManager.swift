@@ -7,7 +7,7 @@ import Observation
 @MainActor
 @Observable
 final class CalendarManager {
-    let model = CountdownModel()
+    let model: CountdownModel
 
     var isSignedIn: Bool = false
     private(set) var userEmail: String?
@@ -16,12 +16,12 @@ final class CalendarManager {
 
     var enabledCalendarIDs: Set<String> {
         get {
-            let stored = UserDefaults.standard.stringArray(forKey: "enabledCalendarIDs")
+            let stored = UserDefaults.app.stringArray(forKey: "enabledCalendarIDs")
             guard let stored else { return [] }
             return Set(stored)
         }
         set {
-            UserDefaults.standard.set(Array(newValue), forKey: "enabledCalendarIDs")
+            UserDefaults.app.set(Array(newValue), forKey: "enabledCalendarIDs")
         }
     }
 
@@ -48,6 +48,8 @@ final class CalendarManager {
         // settings UI without triggering a Keychain prompt it cannot satisfy.
         let isTest = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
         let isPreview = CommandLine.arguments.contains("--preview-settings")
+            || CommandLine.arguments.contains("--preview-overlay")
+        self.model = CountdownModel()
         if !isTest && !isPreview {
             loadStoredTokens()
         }
@@ -101,7 +103,7 @@ final class CalendarManager {
         model.setEvents([])
         model.updateState()
         calendars = []
-        UserDefaults.standard.removeObject(forKey: "enabledCalendarIDs")
+        UserDefaults.app.removeObject(forKey: "enabledCalendarIDs")
 
         TokenStore.delete()
         try? Keychain.delete(service: keychainService, account: keychainAccount)

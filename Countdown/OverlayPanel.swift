@@ -8,17 +8,17 @@ enum OverlayPosition {
     private static let key = "overlayPosition"
 
     static func save(_ origin: CGPoint) {
-        UserDefaults.standard.set([origin.x, origin.y], forKey: key)
+        UserDefaults.app.set([origin.x, origin.y], forKey: key)
     }
 
     static func restore() -> CGPoint? {
-        guard let array = UserDefaults.standard.array(forKey: key) as? [Double],
+        guard let array = UserDefaults.app.array(forKey: key) as? [Double],
               array.count == 2 else { return nil }
         return CGPoint(x: array[0], y: array[1])
     }
 
     static func clear() {
-        UserDefaults.standard.removeObject(forKey: key)
+        UserDefaults.app.removeObject(forKey: key)
     }
 
     static func isVisible(origin: CGPoint, panelSize: CGSize, screenFrames: [CGRect]) -> Bool {

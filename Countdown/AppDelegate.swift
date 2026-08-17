@@ -33,6 +33,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         #endif
 
+        #if DEBUG
+        let isOverlayPreview = CommandLine.arguments.contains("--preview-overlay")
+        #endif
+
         NSApp.setActivationPolicy(.accessory)
 
         let circleContent = OverlayContent(manager: calendarManager, onContentHeight: { [weak self] state, height in
@@ -112,6 +116,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             name: NSApplication.didChangeScreenParametersNotification, object: nil
         )
 
+        #if DEBUG
+        if isOverlayPreview {
+            setupOverlayPreview()
+            updatePanel()
+            observeOverlayState()
+            return
+        }
+        #endif
+
         if calendarManager.isSignedIn {
             calendarManager.startPolling()
         }
@@ -144,6 +157,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             _ = calendarManager.model.isIdle
             _ = calendarManager.model.isLoading
             _ = calendarManager.model.compactMode
+            _ = calendarManager.model.isShowingMeetingProgress
             _ = calendarManager.model.sizeMode
             _ = calendarManager.model.autoReposition
             _ = calendarManager.model.repositionCorner
@@ -187,6 +201,71 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     #if DEBUG
+    /// Drives the overlay with a fixed pair of events instead of Google Calendar, so
+    /// the countdown circle and meeting bar can be inspected without signing in.
+    /// `PREVIEW_MODE=compact` switches size; `PREVIEW_BAR=off` hides the meeting bar.
+    private func setupOverlayPreview() {
+        calendarManager.isSignedIn = true
+
+        let model = calendarManager.model
+        model.sizeMode = ProcessInfo.processInfo.environment["PREVIEW_MODE"] == "compact"
+            ? .compact : .standard
+        model.showingEventDetails = true
+        model.showMeetingProgress = ProcessInfo.processInfo.environment["PREVIEW_BAR"] != "off"
+
+        // A meeting a quarter of the way through, and the next one 12 minutes out.
+        // `PREVIEW_NEXT=none` drops the upcoming meeting, leaving the idle grey dot
+        // beside a bar for the meeting still under way.
+        let currentStart = Date().addingTimeInterval(-15 * 60)
+        var events = [
+            CalendarEvent(
+                id: "current",
+                summary: "Sprint planning",
+                startTime: currentStart,
+                endTime: currentStart.addingTimeInterval(60 * 60),
+                hasOtherAttendees: true
+            )
+        ]
+        if ProcessInfo.processInfo.environment["PREVIEW_NEXT"] != "none" {
+            events.append(
+                CalendarEvent(
+                    id: "next",
+                    summary: "Design review",
+                    startTime: Date().addingTimeInterval(12 * 60),
+                    endTime: Date().addingTimeInterval(42 * 60),
+                    hasOtherAttendees: true
+                )
+            )
+        }
+        model.setEvents(events)
+        model.updateState()
+
+        Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
+            Task { @MainActor in self?.calendarManager.model.updateState() }
+        }
+
+        // Ignore any saved position so the whole panel is visible for inspection.
+        overlayPanel?.positionInCorner(.topLeft)
+        if let panel = overlayPanel {
+            panelPlacement.setAnchor(.topLeft, currentFrame: panel.frame)
+        }
+
+        // Give the panel a moment to measure its content, then report where it
+        // landed in the screencapture coordinate system.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
+            guard let panel = self?.overlayPanel else { return }
+            let frame = panel.frame
+            // The screencapture origin is the top-left of the whole desktop, which
+            // is the top of whichever screen reaches highest.
+            let desktopMaxY = NSScreen.screens.map(\.frame.maxY).max() ?? 0
+            let topY = desktopMaxY - frame.maxY
+            FileHandle.standardError.write(
+                "PREVIEW_RECT \(Int(frame.minX)) \(Int(topY)) \(Int(frame.width)) \(Int(frame.height))\n"
+                    .data(using: .utf8)!
+            )
+        }
+    }
+
     private var settingsPreviewWindow: NSWindow?
 
     private static let previewCalendars: [CalendarInfo] = [
@@ -655,6 +734,14 @@ struct OverlayContent: View {
         OverlayLayoutState(model: manager.model)
     }
 
+    /// Two rows are too tall for a capsule — its rounded ends become semicircles
+    /// that waste horizontal space at both edges.
+    private var compactBackgroundShape: AnyShape {
+        manager.model.isShowingMeetingProgress
+            ? AnyShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            : AnyShape(Capsule())
+    }
+
     var body: some View {
         Group {
             if manager.model.shouldShowOverlay {
@@ -689,6 +776,13 @@ struct OverlayContent: View {
                 ringProgress: manager.model.ringProgress
             )
 
+            if manager.model.isShowingMeetingProgress {
+                MeetingProgressBar(
+                    progress: manager.model.meetingProgress,
+                    minutesRemaining: manager.model.meetingMinutesRemaining
+                )
+            }
+
             if manager.model.showingEventDetails, let event = manager.model.displayedEvent {
                 eventDetailsBox(event: event)
             } else if manager.model.shouldShowEmptyMessage {
@@ -707,40 +801,50 @@ struct OverlayContent: View {
 
     @ViewBuilder
     private var compactLayout: some View {
-        HStack(spacing: 6) {
-            CircleView(
-                minutesRemaining: manager.model.minutesRemaining,
-                colourProgress: manager.model.colourProgress,
-                isFlashing: manager.model.isFlashing,
-                isIdle: manager.model.isIdle,
-                isLoading: manager.model.isLoading,
-                isDisconnected: !manager.isSignedIn,
-                ringProgress: manager.model.ringProgress,
-                compact: true
-            )
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 6) {
+                CircleView(
+                    minutesRemaining: manager.model.minutesRemaining,
+                    colourProgress: manager.model.colourProgress,
+                    isFlashing: manager.model.isFlashing,
+                    isIdle: manager.model.isIdle,
+                    isLoading: manager.model.isLoading,
+                    isDisconnected: !manager.isSignedIn,
+                    ringProgress: manager.model.ringProgress,
+                    compact: true
+                )
 
-            if !manager.model.isLoading && !manager.model.isIdle {
-                Text("\(manager.model.minutesRemaining)")
-                    .font(.system(size: 14, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
+                if !manager.model.isLoading && !manager.model.isIdle {
+                    Text("\(manager.model.minutesRemaining)")
+                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                        .foregroundStyle(.white)
+                }
+
+                if manager.model.showingEventDetails, let event = manager.model.displayedEvent {
+                    Text("\(event.summary) – \(timeFormatter.string(from: event.startTime))")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.9))
+                        .lineLimit(1)
+                } else if manager.model.shouldShowEmptyMessage {
+                    Text("No upcoming meetings")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.7))
+                        .lineLimit(1)
+                }
             }
 
-            if manager.model.showingEventDetails, let event = manager.model.displayedEvent {
-                Text("\(event.summary) – \(timeFormatter.string(from: event.startTime))")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.9))
-                    .lineLimit(1)
-            } else if manager.model.shouldShowEmptyMessage {
-                Text("No upcoming meetings")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.7))
-                    .lineLimit(1)
+            if manager.model.isShowingMeetingProgress {
+                MeetingProgressBar(
+                    progress: manager.model.meetingProgress,
+                    minutesRemaining: manager.model.meetingMinutesRemaining,
+                    compact: true
+                )
             }
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
         .fixedSize(horizontal: true, vertical: false)
-        .background(.black.opacity(0.7), in: Capsule())
+        .background(.black.opacity(0.7), in: compactBackgroundShape)
         .background(GeometryReader { geo in
             Color.clear
                 .preference(

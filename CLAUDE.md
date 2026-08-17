@@ -62,6 +62,11 @@ CircleView renders animated countdown circle
 - **Keychain**: OAuth refresh + access tokens (via `Keychain.swift` wrapper around Security framework)
 - **UserDefaults**: `enabledCalendarIDs`, `meetingsOnly`, overlay position (`overlayX`/`overlayY`)
 
+Settings are read and written through `UserDefaults.app` (`AppDefaults.swift`),
+never `UserDefaults.standard` directly. Tests and preview builds run under the
+app's bundle identifier, so `UserDefaults.app` points them at a scratch domain
+instead of the settings of the copy of Countdown the user actually runs.
+
 ### Configuration
 
 Users must provide Google OAuth credentials in `Countdown/Config.plist` (see `Config.plist.template`). `Config.load()` reads this at startup.
@@ -69,6 +74,24 @@ Users must provide Google OAuth credentials in `Countdown/Config.plist` (see `Co
 ## Testing
 
 Tests use Swift Testing framework (`@Suite`, `@Test`, `#expect`) — not XCTest. HTTP calls are mocked via `MockURLProtocol` which intercepts `URLSession` requests. Model test suites use `.serialized` to prevent concurrency issues.
+
+## Overlay Preview Harness
+
+`--preview-overlay` drives the countdown circle from two fixed events instead of
+Google Calendar, so the overlay can be inspected without signing in. It skips
+the Keychain path, ignores any saved position (the panel goes to the top-left
+corner) and logs `PREVIEW_RECT <x> <y> <w> <h>` to stderr for `screencapture -R`.
+
+```bash
+pkill -x Countdown
+APP="$(xcodebuild -project Countdown.xcodeproj -scheme Countdown -configuration Debug -showBuildSettings 2>/dev/null | awk '/CONFIGURATION_BUILD_DIR/ {print $3}')/Countdown.app/Contents/MacOS/Countdown"
+"$APP" --preview-overlay 2>/tmp/overlay.log &
+```
+
+Environment variables: `PREVIEW_MODE=compact` for the compact size,
+`PREVIEW_BAR=off` to hide the meeting progress bar, `PREVIEW_NEXT=none` to drop
+the upcoming meeting (leaving the idle grey dot beside a bar for the meeting
+still under way). Lives in `AppDelegate.setupOverlayPreview` behind `#if DEBUG`.
 
 ## Settings UI Preview Harness
 

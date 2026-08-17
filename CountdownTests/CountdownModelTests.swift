@@ -290,7 +290,7 @@ struct CountdownModelTests {
     }
 
     @Test func showingEventDetailsDefaultsToTrue() {
-        UserDefaults.standard.removeObject(forKey: "showingEventDetails")
+        UserDefaults.app.removeObject(forKey: "showingEventDetails")
         let model = CountdownModel()
         #expect(model.showingEventDetails == true)
     }
@@ -554,8 +554,8 @@ struct CountdownModelTests {
     // MARK: - Compact mode
 
     @Test func compactModeDefaultsToFalse() {
-        UserDefaults.standard.removeObject(forKey: "compactMode")
-        UserDefaults.standard.removeObject(forKey: "sizeMode")
+        UserDefaults.app.removeObject(forKey: "compactMode")
+        UserDefaults.app.removeObject(forKey: "sizeMode")
         let model = CountdownModel()
         #expect(model.compactMode == false)
     }
@@ -588,7 +588,7 @@ struct CountdownModelTests {
     // MARK: - Hide declined events
 
     @Test func hideDeclinedEventsDefaultsToTrue() {
-        UserDefaults.standard.removeObject(forKey: "hideDeclinedEvents")
+        UserDefaults.app.removeObject(forKey: "hideDeclinedEvents")
         let model = CountdownModel()
         #expect(model.hideDeclinedEvents == true)
     }
@@ -653,7 +653,7 @@ struct CountdownModelTests {
     // MARK: - Hide tasks and birthdays
 
     @Test func hideTasksAndBirthdaysDefaultsToFalse() {
-        UserDefaults.standard.removeObject(forKey: "hideTasksAndBirthdays")
+        UserDefaults.app.removeObject(forKey: "hideTasksAndBirthdays")
         let model = CountdownModel()
         #expect(model.hideTasksAndBirthdays == false)
     }
@@ -788,7 +788,7 @@ struct CountdownModelTests {
     // MARK: - Hide focus time
 
     @Test func hideFocusTimeDefaultsToFalse() {
-        UserDefaults.standard.removeObject(forKey: "hideFocusTime")
+        UserDefaults.app.removeObject(forKey: "hideFocusTime")
         let model = CountdownModel()
         #expect(model.hideFocusTime == false)
     }
@@ -856,22 +856,22 @@ struct CountdownModelTests {
     // MARK: - Size mode
 
     @Test func sizeModeDefaultsToStandardWhenNothingPersisted() {
-        UserDefaults.standard.removeObject(forKey: "sizeMode")
-        UserDefaults.standard.removeObject(forKey: "compactMode")
+        UserDefaults.app.removeObject(forKey: "sizeMode")
+        UserDefaults.app.removeObject(forKey: "compactMode")
         let model = CountdownModel()
         #expect(model.sizeMode == .standard)
     }
 
     @Test func sizeModeMigratesFromLegacyCompactModeTrue() {
-        UserDefaults.standard.removeObject(forKey: "sizeMode")
-        UserDefaults.standard.set(true, forKey: "compactMode")
+        UserDefaults.app.removeObject(forKey: "sizeMode")
+        UserDefaults.app.set(true, forKey: "compactMode")
         let model = CountdownModel()
         #expect(model.sizeMode == .compact)
     }
 
     @Test func sizeModeMigratesFromLegacyCompactModeFalse() {
-        UserDefaults.standard.removeObject(forKey: "sizeMode")
-        UserDefaults.standard.set(false, forKey: "compactMode")
+        UserDefaults.app.removeObject(forKey: "sizeMode")
+        UserDefaults.app.set(false, forKey: "compactMode")
         let model = CountdownModel()
         #expect(model.sizeMode == .standard)
     }
@@ -918,7 +918,7 @@ struct CountdownModelTests {
     // MARK: - Auto reposition
 
     @Test func autoRepositionDefaultsToFalse() {
-        UserDefaults.standard.removeObject(forKey: "autoReposition")
+        UserDefaults.app.removeObject(forKey: "autoReposition")
         let model = CountdownModel()
         #expect(model.autoReposition == false)
     }
@@ -931,7 +931,7 @@ struct CountdownModelTests {
     }
 
     @Test func repositionCornerDefaultsToTopLeft() {
-        UserDefaults.standard.removeObject(forKey: "repositionCorner")
+        UserDefaults.app.removeObject(forKey: "repositionCorner")
         let model = CountdownModel()
         #expect(model.repositionCorner == .topLeft)
     }
@@ -980,7 +980,7 @@ struct CountdownModelTests {
     }
 
     @Test func showMeetingProgressDefaultsToOff() {
-        UserDefaults.standard.removeObject(forKey: "showMeetingProgress")
+        UserDefaults.app.removeObject(forKey: "showMeetingProgress")
         let model = CountdownModel()
         #expect(model.showMeetingProgress == false)
     }
@@ -1136,14 +1136,13 @@ struct CountdownModelTests {
 /// Saves, clears and restores UserDefaults keys to prevent test pollution.
 /// Store as a property on test structs — deinit restores values when the struct goes out of scope.
 ///
-/// Clearing matters because the test bundle is hosted by the app and so shares
-/// its defaults domain: without it, tests inherit whatever preferences the
-/// developer happens to have set in the real app.
+/// Clearing matters because values otherwise carry over between test runs, so a
+/// test that never sets a key inherits whatever the last run left behind.
 final class DefaultsSnapshot {
     private let saved: [String: Any?]
     private let defaults: UserDefaults
 
-    init(keys: [String], defaults: UserDefaults = .standard) {
+    init(keys: [String], defaults: UserDefaults = .app) {
         self.defaults = defaults
         var saved: [String: Any?] = [:]
         for key in keys {

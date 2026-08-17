@@ -97,7 +97,7 @@ final class CountdownModel {
     private var dismissedEventID: String?
     private var flashAcknowledgedEventID: String?
 
-    init(defaults: UserDefaults = .standard) {
+    init(defaults: UserDefaults = .app) {
         self.defaults = defaults
         self.meetingsOnly = defaults.bool(forKey: DefaultsKey.meetingsOnly)
         if defaults.object(forKey: DefaultsKey.hideDeclinedEvents) == nil {

@@ -10,7 +10,7 @@ struct OverlayPositionTests {
     private let _snapshot = DefaultsSnapshot(keys: ["overlayPosition"])
 
     @Test func restoreReturnsNilWhenNoSavedPosition() {
-        UserDefaults.standard.removeObject(forKey: "overlayPosition")
+        UserDefaults.app.removeObject(forKey: "overlayPosition")
         #expect(OverlayPosition.restore() == nil)
     }
 
