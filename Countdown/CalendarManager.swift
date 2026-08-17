@@ -172,6 +172,12 @@ final class CalendarManager {
         poll()
     }
 
+    /// No re-poll: this only changes what the overlay draws from events we already have.
+    func setShowMeetingProgress(_ value: Bool) {
+        model.showMeetingProgress = value
+        model.updateState()
+    }
+
     // MARK: - Polling
 
     func startPolling(skipInitialFetch: Bool = false) {
@@ -232,25 +238,7 @@ final class CalendarManager {
 
             allEvents.sort { $0.startTime < $1.startTime }
 
-            var filtered = allEvents
-            if model.meetingsOnly {
-                filtered = filtered.filter { $0.hasOtherAttendees }
-            }
-            if model.hideDeclinedEvents {
-                filtered = filtered.filter {
-                    !$0.summary.hasPrefix("Declined:") && !$0.summary.hasPrefix("Cancelled:")
-                }
-            }
-            if model.hideTasksAndBirthdays {
-                filtered = filtered.filter {
-                    !CountdownModel.nonMeetingEventTypes.contains($0.eventType ?? "")
-                }
-            }
-            if model.hideFocusTime {
-                filtered = filtered.filter { $0.eventType != "focusTime" }
-            }
-
-            model.setEvents(filtered)
+            model.setEvents(allEvents.filter { model.passesFilters($0) })
             model.updateState()
             errorMessage = nil
         } catch CalendarClientError.unauthorised where !isRetry {
