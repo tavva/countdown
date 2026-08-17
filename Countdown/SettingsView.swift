@@ -111,6 +111,8 @@ struct SettingsView: View {
                 .labelsHidden()
             }
 
+            inlineToggle("Show time left in current meeting", isOn: showMeetingProgressBinding)
+
             VStack(alignment: .leading, spacing: 10) {
                 inlineToggle("Auto-reposition on display change", isOn: autoRepositionBinding)
 
@@ -427,6 +429,13 @@ struct SettingsView: View {
         Binding(
             get: { manager.model.showingEventDetails },
             set: { manager.model.showingEventDetails = $0 }
+        )
+    }
+
+    private var showMeetingProgressBinding: Binding<Bool> {
+        Binding(
+            get: { manager.model.showMeetingProgress },
+            set: { manager.setShowMeetingProgress($0) }
         )
     }
 

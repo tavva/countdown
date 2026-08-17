@@ -29,6 +29,7 @@
 - **Colour transitions** — green (60 min) → orange → red (imminent) → pulsing flash at <1 min
 - **Multi-calendar support** — choose which Google Calendars to watch, with colour-coded indicators
 - **Meetings filter** — optionally show only events with other attendees
+- **Time left in the current meeting** — optional bar under the circle showing how much of the meeting you're in is left
 - **Tap for details** — tap the circle to see event name and time range
 - **Launch at login** — start automatically when you log in
 - **Zero dependencies** — built entirely with native Swift, SwiftUI, and AppKit

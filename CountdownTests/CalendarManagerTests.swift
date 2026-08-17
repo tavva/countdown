@@ -40,7 +40,31 @@ struct CalendarManagerTests {
     private let _snapshot = DefaultsSnapshot(keys: [
         "meetingsOnly", "enabledCalendarIDs",
         "hideDeclinedEvents", "hideTasksAndBirthdays", "hideFocusTime",
+        "showMeetingProgress",
     ])
+
+    @Test @MainActor func setShowMeetingProgressUpdatesOverlayImmediately() {
+        let manager = CalendarManager()
+        manager.setShowMeetingProgress(false)
+        let start = Date().addingTimeInterval(-15 * 60)
+        manager.model.setEvents([
+            CalendarEvent(
+                id: "1",
+                summary: "Standup",
+                startTime: start,
+                endTime: start.addingTimeInterval(60 * 60),
+                hasOtherAttendees: true
+            )
+        ])
+        manager.model.updateState()
+        #expect(manager.model.isShowingMeetingProgress == false)
+
+        manager.setShowMeetingProgress(true)
+
+        #expect(manager.model.showMeetingProgress == true)
+        #expect(manager.model.isShowingMeetingProgress == true)
+        #expect(manager.model.meetingMinutesRemaining == 45)
+    }
 
     @Test @MainActor func setMeetingsOnlyUpdatesOverlayImmediately() {
         let manager = CalendarManager()
