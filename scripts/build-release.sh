@@ -33,7 +33,10 @@ echo "==> Setting version to ${VERSION}..."
 /usr/bin/sed -i '' -E "s/(CFBundleShortVersionString: )[0-9.]+/\1${VERSION}/" project.yml
 /usr/bin/sed -i '' -E "s/(CFBundleVersion: )[0-9.]+/\1${VERSION}/" project.yml
 git add Countdown/Info.plist project.yml
-git commit -m "Bump version to ${VERSION}"
+# Already at this version, e.g. re-running after a later step failed.
+if ! git diff --cached --quiet; then
+  git commit -m "Bump version to ${VERSION}"
+fi
 
 rm -rf "$BUILD_DIR"
 
