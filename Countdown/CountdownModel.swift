@@ -40,6 +40,11 @@ final class CountdownModel {
     var hideFocusTime: Bool {
         didSet { defaults.set(hideFocusTime, forKey: DefaultsKey.hideFocusTime) }
     }
+    /// When true, shows a bar tracking how much of the meeting you are
+    /// currently in is left, independently of the countdown to the next event.
+    var showMeetingProgress: Bool {
+        didSet { defaults.set(showMeetingProgress, forKey: DefaultsKey.showMeetingProgress) }
+    }
 
     private(set) var shouldShowOverlay: Bool = true
     private(set) var minutesRemaining: Int = 0
@@ -48,6 +53,14 @@ final class CountdownModel {
     private(set) var isIdle: Bool = false
     private(set) var isLoading: Bool = true
     private(set) var ringProgress: Double = 0.0  // 0 = no ring, 1 = full ring
+
+    /// The meeting currently under way, i.e. started and not yet ended. Unrelated
+    /// to `nextEvent`, which is whatever the dot is counting down to.
+    private(set) var currentEvent: CalendarEvent?
+    private(set) var meetingMinutesRemaining: Int = 0
+    private(set) var meetingProgress: Double = 0.0  // 1 = just started, 0 = ending now
+    private(set) var isShowingMeetingProgress: Bool = false
+
     // Effective state — derived from sizeMode + current display configuration.
     // Production code should route changes through sizeMode or applyEffectiveMode;
     // tests may set it directly to exercise layout logic.
@@ -80,6 +93,7 @@ final class CountdownModel {
         "task", "birthday", "fromGmail", "outOfOffice", "workingLocation",
     ]
 
+    private var events: [CalendarEvent] = []
     private var dismissedEventID: String?
     private var flashAcknowledgedEventID: String?
 
@@ -94,6 +108,7 @@ final class CountdownModel {
 
         self.hideTasksAndBirthdays = defaults.bool(forKey: DefaultsKey.hideTasksAndBirthdays)
         self.hideFocusTime = defaults.bool(forKey: DefaultsKey.hideFocusTime)
+        self.showMeetingProgress = defaults.bool(forKey: DefaultsKey.showMeetingProgress)
 
         // Migrate: if sizeMode isn't set but legacy compactMode is, derive sizeMode from it.
         let resolvedMode: SizeMode
@@ -128,7 +143,22 @@ final class CountdownModel {
 
     func setEvents(_ events: [CalendarEvent]) {
         isLoading = false
+        self.events = events
         nextEvent = events.first { $0.startTime.timeIntervalSinceNow >= -5 * 60 }
+    }
+
+    /// Whether an event is one the user wants to see, per the event filters.
+    func passesFilters(_ event: CalendarEvent) -> Bool {
+        if meetingsOnly && !event.hasOtherAttendees { return false }
+        if hideDeclinedEvents
+            && (event.summary.hasPrefix("Declined:") || event.summary.hasPrefix("Cancelled:")) {
+            return false
+        }
+        if hideTasksAndBirthdays && CountdownModel.nonMeetingEventTypes.contains(event.eventType ?? "") {
+            return false
+        }
+        if hideFocusTime && event.eventType == "focusTime" { return false }
+        return true
     }
 
     func toggleCompactMode() {
@@ -163,6 +193,8 @@ final class CountdownModel {
     }
 
     func updateState() {
+        updateMeetingProgress()
+
         if isLoading {
             shouldShowOverlay = true
             return
@@ -173,22 +205,7 @@ final class CountdownModel {
             return
         }
 
-        if meetingsOnly && !event.hasOtherAttendees {
-            setIdleOrHidden()
-            return
-        }
-
-        if hideDeclinedEvents && (event.summary.hasPrefix("Declined:") || event.summary.hasPrefix("Cancelled:")) {
-            setIdleOrHidden()
-            return
-        }
-
-        if hideTasksAndBirthdays && CountdownModel.nonMeetingEventTypes.contains(event.eventType ?? "") {
-            setIdleOrHidden()
-            return
-        }
-
-        if hideFocusTime && event.eventType == "focusTime" {
+        if !passesFilters(event) {
             setIdleOrHidden()
             return
         }
@@ -228,6 +245,43 @@ final class CountdownModel {
         isFlashing = shouldFlash && flashAcknowledgedEventID != event.id
     }
 
+    /// Picks the meeting under way and works out how much of it is left. When
+    /// meetings overlap the one ending soonest wins — that's the one you have
+    /// to leave first.
+    private func updateMeetingProgress() {
+        guard showMeetingProgress else {
+            clearMeetingProgress()
+            return
+        }
+
+        let now = Date()
+        let inProgress = events
+            .filter { $0.startTime <= now && $0.endTime > now }
+            .filter { passesFilters($0) }
+            .filter { $0.id != dismissedEventID }
+            .min { $0.endTime < $1.endTime }
+
+        guard let meeting = inProgress else {
+            clearMeetingProgress()
+            return
+        }
+
+        let remaining = meeting.endTime.timeIntervalSince(now)
+        let duration = meeting.endTime.timeIntervalSince(meeting.startTime)
+
+        currentEvent = meeting
+        meetingMinutesRemaining = max(0, Int(ceil(remaining / 60.0)))
+        meetingProgress = duration > 0 ? min(1.0, max(0.0, remaining / duration)) : 0
+        if !isShowingMeetingProgress { isShowingMeetingProgress = true }
+    }
+
+    private func clearMeetingProgress() {
+        currentEvent = nil
+        meetingMinutesRemaining = 0
+        meetingProgress = 0
+        if isShowingMeetingProgress { isShowingMeetingProgress = false }
+    }
+
     private func setIdleOrHidden() {
         ringProgress = 0
         shouldShowOverlay = true
@@ -247,6 +301,7 @@ private enum DefaultsKey {
     static let hideDeclinedEvents = "hideDeclinedEvents"
     static let hideTasksAndBirthdays = "hideTasksAndBirthdays"
     static let hideFocusTime = "hideFocusTime"
+    static let showMeetingProgress = "showMeetingProgress"
     static let compactMode = "compactMode"
     static let showingEventDetails = "showingEventDetails"
     static let sizeMode = "sizeMode"

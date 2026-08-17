@@ -10,7 +10,7 @@ struct CountdownModelTests {
     private let _snapshot = DefaultsSnapshot(keys: [
         "meetingsOnly", "showingEventDetails", "compactMode",
         "hideDeclinedEvents", "sizeMode", "autoReposition", "repositionCorner",
-        "hideTasksAndBirthdays", "hideFocusTime",
+        "hideTasksAndBirthdays", "hideFocusTime", "showMeetingProgress",
     ])
 
     // MARK: - Loading state
@@ -956,12 +956,189 @@ struct CountdownModelTests {
         #expect(model.sizeMode == .standard)
         #expect(model.compactMode == false)
     }
+
+    // MARK: - Current meeting progress
+
+    /// A meeting that started `minutesAgo` minutes ago and runs for `duration` minutes.
+    private func inProgressEvent(
+        id: String = "current",
+        summary: String = "Standup",
+        startedMinutesAgo: Double,
+        durationMinutes: Double,
+        hasOtherAttendees: Bool = true,
+        eventType: String? = nil
+    ) -> CalendarEvent {
+        let start = Date().addingTimeInterval(-startedMinutesAgo * 60)
+        return CalendarEvent(
+            id: id,
+            summary: summary,
+            startTime: start,
+            endTime: start.addingTimeInterval(durationMinutes * 60),
+            hasOtherAttendees: hasOtherAttendees,
+            eventType: eventType
+        )
+    }
+
+    @Test func showMeetingProgressDefaultsToOff() {
+        UserDefaults.standard.removeObject(forKey: "showMeetingProgress")
+        let model = CountdownModel()
+        #expect(model.showMeetingProgress == false)
+    }
+
+    @Test func showMeetingProgressPersists() {
+        let model = CountdownModel()
+        model.showMeetingProgress = true
+        let model2 = CountdownModel()
+        #expect(model2.showMeetingProgress == true)
+    }
+
+    @Test func noMeetingProgressWhenSettingOff() {
+        let model = CountdownModel()
+        model.showMeetingProgress = false
+        model.setEvents([inProgressEvent(startedMinutesAgo: 15, durationMinutes: 60)])
+        model.updateState()
+        #expect(model.currentEvent == nil)
+        #expect(model.isShowingMeetingProgress == false)
+    }
+
+    @Test func meetingInProgressReportsMinutesRemaining() {
+        let model = CountdownModel()
+        model.showMeetingProgress = true
+        model.setEvents([inProgressEvent(startedMinutesAgo: 15, durationMinutes: 60)])
+        model.updateState()
+        #expect(model.currentEvent?.id == "current")
+        #expect(model.meetingMinutesRemaining == 45)
+        #expect(abs(model.meetingProgress - 0.75) < 0.01)
+        #expect(model.isShowingMeetingProgress == true)
+    }
+
+    @Test func meetingProgressDrainsTowardsZero() {
+        let model = CountdownModel()
+        model.showMeetingProgress = true
+        model.setEvents([inProgressEvent(startedMinutesAgo: 57, durationMinutes: 60)])
+        model.updateState()
+        #expect(model.meetingMinutesRemaining == 3)
+        #expect(abs(model.meetingProgress - 0.05) < 0.01)
+    }
+
+    @Test func meetingProgressShowsWhileDotIsIdle() {
+        let model = CountdownModel()
+        model.showMeetingProgress = true
+        // Started 30 minutes ago, so the dot has long since given up on it.
+        model.setEvents([inProgressEvent(startedMinutesAgo: 30, durationMinutes: 90)])
+        model.updateState()
+        #expect(model.isIdle == true)
+        #expect(model.isShowingMeetingProgress == true)
+        #expect(model.meetingMinutesRemaining == 60)
+    }
+
+    @Test func eventNotYetStartedHasNoMeetingProgress() {
+        let model = CountdownModel()
+        model.showMeetingProgress = true
+        model.setEvents([
+            CalendarEvent(
+                id: "later",
+                summary: "Standup",
+                startTime: Date().addingTimeInterval(10 * 60),
+                endTime: Date().addingTimeInterval(40 * 60),
+                hasOtherAttendees: true
+            )
+        ])
+        model.updateState()
+        #expect(model.currentEvent == nil)
+        #expect(model.isShowingMeetingProgress == false)
+    }
+
+    @Test func endedMeetingHasNoMeetingProgress() {
+        let model = CountdownModel()
+        model.showMeetingProgress = true
+        model.setEvents([inProgressEvent(startedMinutesAgo: 60, durationMinutes: 30)])
+        model.updateState()
+        #expect(model.currentEvent == nil)
+        #expect(model.isShowingMeetingProgress == false)
+    }
+
+    @Test func overlappingMeetingsTrackTheOneEndingSoonest() {
+        let model = CountdownModel()
+        model.showMeetingProgress = true
+        model.setEvents([
+            inProgressEvent(id: "long", startedMinutesAgo: 30, durationMinutes: 120),
+            inProgressEvent(id: "short", startedMinutesAgo: 10, durationMinutes: 30),
+        ])
+        model.updateState()
+        #expect(model.currentEvent?.id == "short")
+        #expect(model.meetingMinutesRemaining == 20)
+    }
+
+    @Test func meetingProgressRespectsMeetingsOnly() {
+        let model = CountdownModel()
+        model.showMeetingProgress = true
+        model.meetingsOnly = true
+        model.setEvents([
+            inProgressEvent(startedMinutesAgo: 15, durationMinutes: 60, hasOtherAttendees: false)
+        ])
+        model.updateState()
+        #expect(model.currentEvent == nil)
+        #expect(model.isShowingMeetingProgress == false)
+    }
+
+    @Test func meetingProgressRespectsHideFocusTime() {
+        let model = CountdownModel()
+        model.showMeetingProgress = true
+        model.hideFocusTime = true
+        model.setEvents([
+            inProgressEvent(startedMinutesAgo: 15, durationMinutes: 60, eventType: "focusTime")
+        ])
+        model.updateState()
+        #expect(model.currentEvent == nil)
+    }
+
+    @Test func meetingProgressRespectsHideDeclined() {
+        let model = CountdownModel()
+        model.showMeetingProgress = true
+        model.hideDeclinedEvents = true
+        model.setEvents([
+            inProgressEvent(summary: "Declined: Standup", startedMinutesAgo: 15, durationMinutes: 60)
+        ])
+        model.updateState()
+        #expect(model.currentEvent == nil)
+    }
+
+    @Test func dismissedMeetingHasNoMeetingProgress() {
+        let model = CountdownModel()
+        model.showMeetingProgress = true
+        model.setEvents([inProgressEvent(startedMinutesAgo: 2, durationMinutes: 60)])
+        model.updateState()
+        #expect(model.currentEvent?.id == "current")
+
+        model.dismiss()
+        model.updateState()
+        #expect(model.currentEvent == nil)
+        #expect(model.isShowingMeetingProgress == false)
+    }
+
+    @Test func meetingProgressStopsWhenSettingTurnedOff() {
+        let model = CountdownModel()
+        model.showMeetingProgress = true
+        model.setEvents([inProgressEvent(startedMinutesAgo: 15, durationMinutes: 60)])
+        model.updateState()
+        #expect(model.isShowingMeetingProgress == true)
+
+        model.showMeetingProgress = false
+        model.updateState()
+        #expect(model.isShowingMeetingProgress == false)
+        #expect(model.currentEvent == nil)
+    }
 }
 
 // MARK: - Test helper
 
-/// Saves and restores UserDefaults keys to prevent test pollution.
+/// Saves, clears and restores UserDefaults keys to prevent test pollution.
 /// Store as a property on test structs — deinit restores values when the struct goes out of scope.
+///
+/// Clearing matters because the test bundle is hosted by the app and so shares
+/// its defaults domain: without it, tests inherit whatever preferences the
+/// developer happens to have set in the real app.
 final class DefaultsSnapshot {
     private let saved: [String: Any?]
     private let defaults: UserDefaults
@@ -971,6 +1148,7 @@ final class DefaultsSnapshot {
         var saved: [String: Any?] = [:]
         for key in keys {
             saved[key] = defaults.object(forKey: key)
+            defaults.removeObject(forKey: key)
         }
         self.saved = saved
     }
