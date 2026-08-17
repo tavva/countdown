@@ -549,6 +549,38 @@ struct OverlayLayoutStateCachingTests {
         #expect(cache.size(for: dotOnly) == CGSize(width: 44, height: 36))
         #expect(cache.size(for: emptyMessage) == CGSize(width: 180, height: 36))
     }
+
+    @Test func meetingProgressKeepsSeparateStandardHeight() {
+        var cache = OverlayMeasurementCache()
+        let barHidden = OverlayLayoutState(mode: .standard, showsEventDetails: true, showsCompactMinutes: false)
+        let barShown = OverlayLayoutState(
+            mode: .standard, showsEventDetails: true, showsCompactMinutes: false,
+            showsMeetingProgress: true
+        )
+
+        _ = cache.applyHeight(188.2, for: barHidden)
+        _ = cache.applyHeight(206.4, for: barShown)
+
+        #expect(cache.size(for: barHidden) == CGSize(width: 200, height: 189))
+        #expect(cache.size(for: barShown) == CGSize(width: 200, height: 207))
+    }
+
+    @Test func meetingProgressKeepsSeparateCompactSize() {
+        var cache = OverlayMeasurementCache()
+        let barHidden = OverlayLayoutState(mode: .compact, showsEventDetails: false, showsCompactMinutes: true)
+        let barShown = OverlayLayoutState(
+            mode: .compact, showsEventDetails: false, showsCompactMinutes: true,
+            showsMeetingProgress: true
+        )
+
+        _ = cache.applyHeight(35.2, for: barHidden)
+        _ = cache.applyWidth(79.1, for: barHidden)
+        _ = cache.applyHeight(52.6, for: barShown)
+        _ = cache.applyWidth(112.3, for: barShown)
+
+        #expect(cache.size(for: barHidden) == CGSize(width: 80, height: 36))
+        #expect(cache.size(for: barShown) == CGSize(width: 113, height: 53))
+    }
 }
 
 @Suite("OverlayLayoutStateTransition")
@@ -584,8 +616,35 @@ struct OverlayLayoutStateModelTests {
     private let _snapshot = DefaultsSnapshot(keys: [
         "meetingsOnly", "showingEventDetails", "compactMode",
         "hideDeclinedEvents", "sizeMode", "autoReposition", "repositionCorner",
-        "hideTasksAndBirthdays",
+        "hideTasksAndBirthdays", "hideFocusTime", "showMeetingProgress",
     ])
+
+    @Test func meetingInProgressSetsShowsMeetingProgress() {
+        let model = CountdownModel()
+        model.showMeetingProgress = true
+        let start = Date().addingTimeInterval(-15 * 60)
+        model.setEvents([
+            CalendarEvent(
+                id: "1",
+                summary: "Standup",
+                startTime: start,
+                endTime: start.addingTimeInterval(60 * 60),
+                hasOtherAttendees: true
+            )
+        ])
+        model.updateState()
+
+        #expect(OverlayLayoutState(model: model).showsMeetingProgress == true)
+    }
+
+    @Test func noMeetingInProgressClearsShowsMeetingProgress() {
+        let model = CountdownModel()
+        model.showMeetingProgress = true
+        model.setEvents([])
+        model.updateState()
+
+        #expect(OverlayLayoutState(model: model).showsMeetingProgress == false)
+    }
 
     @Test func compactIdleWithDetailsShowsEmptyMessage() {
         let model = CountdownModel()

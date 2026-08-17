@@ -359,12 +359,20 @@ struct OverlayLayoutState: Hashable, Equatable {
     let showsEventDetails: Bool
     let showsCompactMinutes: Bool
     let showsEmptyMessage: Bool
+    let showsMeetingProgress: Bool
 
-    init(mode: OverlayDisplayMode, showsEventDetails: Bool, showsCompactMinutes: Bool, showsEmptyMessage: Bool = false) {
+    init(
+        mode: OverlayDisplayMode,
+        showsEventDetails: Bool,
+        showsCompactMinutes: Bool,
+        showsEmptyMessage: Bool = false,
+        showsMeetingProgress: Bool = false
+    ) {
         self.mode = mode
         self.showsEventDetails = showsEventDetails
         self.showsCompactMinutes = showsCompactMinutes
         self.showsEmptyMessage = showsEmptyMessage
+        self.showsMeetingProgress = showsMeetingProgress
     }
 
     init(model: CountdownModel) {
@@ -373,6 +381,7 @@ struct OverlayLayoutState: Hashable, Equatable {
         self.showsEventDetails = model.showingEventDetails && model.displayedEvent != nil
         self.showsCompactMinutes = mode == .compact && !model.isLoading && !model.isIdle
         self.showsEmptyMessage = model.shouldShowEmptyMessage
+        self.showsMeetingProgress = model.isShowingMeetingProgress
     }
 
     static func defaultState(for mode: OverlayDisplayMode) -> OverlayLayoutState {

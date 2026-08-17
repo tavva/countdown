@@ -45,6 +45,7 @@ struct CalendarManagerTests {
 
     @Test @MainActor func setShowMeetingProgressUpdatesOverlayImmediately() {
         let manager = CalendarManager()
+        manager.setShowMeetingProgress(false)
         let start = Date().addingTimeInterval(-15 * 60)
         manager.model.setEvents([
             CalendarEvent(
