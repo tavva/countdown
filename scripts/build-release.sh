@@ -9,6 +9,8 @@ VERSION="${1:?Usage: $0 <version> (e.g. 1.0.0)}"
 PROJECT="Countdown.xcodeproj"
 SCHEME="Countdown"
 TEAM_ID="C8Q84FVJHL"
+# Named in full because the keychain also holds the team's older Developer ID certificate.
+SIGNING_IDENTITY="Developer ID Application: HUMAN FACTOR STUDIOS LLP ($TEAM_ID)"
 BUILD_DIR="./build"
 ARCHIVE_PATH="$BUILD_DIR/Countdown.xcarchive"
 EXPORT_PATH="$BUILD_DIR/export"
@@ -47,7 +49,8 @@ xcodebuild -project "$PROJECT" \
   archive \
   -archivePath "$ARCHIVE_PATH" \
   DEVELOPMENT_TEAM="$TEAM_ID" \
-  CODE_SIGN_IDENTITY="Developer ID Application" \
+  CODE_SIGN_STYLE=Manual \
+  CODE_SIGN_IDENTITY="$SIGNING_IDENTITY" \
   -quiet
 
 echo "==> Exporting archive..."

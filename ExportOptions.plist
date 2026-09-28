@@ -6,5 +6,9 @@
     <string>developer-id</string>
     <key>teamID</key>
     <string>C8Q84FVJHL</string>
+    <key>signingStyle</key>
+    <string>manual</string>
+    <key>signingCertificate</key>
+    <string>Developer ID Application: HUMAN FACTOR STUDIOS LLP</string>
 </dict>
 </plist>
