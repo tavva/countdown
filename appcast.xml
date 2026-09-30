@@ -152,5 +152,15 @@
                  type="application/octet-stream"
                  sparkle:edSignature="8kvtpUI6S/eouMkDVM2LiGCfsBz6Pbk0xYfm/XqU5OK0M7a1j76C4F6yrt2HFhENfm2UU1JRZKhwjKJ1pSalCw==" length="3354817" />
     </item>
+    <item>
+      <title>Version 1.7.1</title>
+      <pubDate>Wed, 30 Sep 2026 11:46:33 +0100</pubDate>
+      <sparkle:version>1.7.1</sparkle:version>
+      <sparkle:shortVersionString>1.7.1</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <enclosure url="https://github.com/tavva/countdown/releases/download/v1.7.1/Countdown-1.7.1.dmg"
+                 type="application/octet-stream"
+                 sparkle:edSignature="oqE9sf54i7IS/EE1rAPKJ8eNp+O9GsoAp6FFKK9ycoEr6zTPnt5Ey0xp0BJliQXk9jIYhdbjPs3RIDP0BXUJBg==" length="3354621" />
+    </item>
   </channel>
 </rss>
