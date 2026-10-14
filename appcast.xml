@@ -162,5 +162,15 @@
                  type="application/octet-stream"
                  sparkle:edSignature="oqE9sf54i7IS/EE1rAPKJ8eNp+O9GsoAp6FFKK9ycoEr6zTPnt5Ey0xp0BJliQXk9jIYhdbjPs3RIDP0BXUJBg==" length="3354621" />
     </item>
+    <item>
+      <title>Version 1.8.0</title>
+      <pubDate>Wed, 14 Oct 2026 14:24:17 +0100</pubDate>
+      <sparkle:version>1.8.0</sparkle:version>
+      <sparkle:shortVersionString>1.8.0</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <enclosure url="https://github.com/tavva/countdown/releases/download/v1.8.0/Countdown-1.8.0.dmg"
+                 type="application/octet-stream"
+                 sparkle:edSignature="zRDbGaAZQNU/4Tq7ly00WyLRe2D0aM5xgJoZXXfcgVqI+OgHFY4PEs85V1ImspbeLUe3lupm4y2ZcxxL8KBYAw==" length="3385599" />
+    </item>
   </channel>
 </rss>
