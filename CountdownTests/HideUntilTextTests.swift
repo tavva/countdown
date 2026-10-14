@@ -13,12 +13,12 @@ struct HideUntilTextTests {
 
     @Test func menuTitleSaysTomorrowAfterFourAM() {
         let now = Self.date(2026, 10, 14, 15, 30)
-        #expect(HideUntilText.fourAMMenuTitle(now: now) == "Hide until tomorrow, 4am")
+        #expect(HideUntilText.fourAMMenuTitle(now: now) == "Hide Countdown until tomorrow, 4am")
     }
 
     @Test func menuTitleDropsTomorrowBeforeFourAM() {
         let now = Self.date(2026, 10, 14, 1, 15)
-        #expect(HideUntilText.fourAMMenuTitle(now: now) == "Hide until 4am")
+        #expect(HideUntilText.fourAMMenuTitle(now: now) == "Hide Countdown until 4am")
     }
 
     @Test func descriptionForToday() {

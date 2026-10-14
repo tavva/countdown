@@ -168,6 +168,8 @@ final class OverlayPanel: NSPanel {
     var onPositionChange: (() -> Void)?
     var onSettings: (() -> Void)?
     var onToggleCompact: (() -> Void)?
+    var onHideUntilFourAM: (() -> Void)?
+    var onChooseHideTime: (() -> Void)?
 
     var isCompact: Bool = false {
         didSet { (contentView as? CircleHitTestView)?.isCompact = isCompact }
@@ -255,6 +257,20 @@ final class OverlayPanel: NSPanel {
 
         menu.addItem(NSMenuItem.separator())
 
+        let hideFourAMItem = NSMenuItem(
+            title: HideUntilText.fourAMMenuTitle(),
+            action: #selector(hideUntilFourAMMenuAction),
+            keyEquivalent: ""
+        )
+        hideFourAMItem.target = self
+        menu.addItem(hideFourAMItem)
+
+        let hideChooseItem = NSMenuItem(title: "Hide Countdown until…", action: #selector(chooseHideTimeMenuAction), keyEquivalent: "")
+        hideChooseItem.target = self
+        menu.addItem(hideChooseItem)
+
+        menu.addItem(NSMenuItem.separator())
+
         let settingsItem = NSMenuItem(title: "Settings…", action: #selector(settingsMenuAction), keyEquivalent: ",")
         settingsItem.target = self
         menu.addItem(settingsItem)
@@ -269,6 +285,14 @@ final class OverlayPanel: NSPanel {
 
     @objc private func settingsMenuAction(_ sender: Any?) {
         onSettings?()
+    }
+
+    @objc private func hideUntilFourAMMenuAction(_ sender: Any?) {
+        onHideUntilFourAM?()
+    }
+
+    @objc private func chooseHideTimeMenuAction(_ sender: Any?) {
+        onChooseHideTime?()
     }
 
     func positionInCorner(_ corner: ScreenCorner) {

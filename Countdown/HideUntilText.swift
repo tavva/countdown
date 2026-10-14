@@ -4,11 +4,11 @@
 import Foundation
 
 enum HideUntilText {
-    /// "Hide until tomorrow, 4am", or "Hide until 4am" when the next 4am is
+    /// "Hide Countdown until tomorrow, 4am", or "Hide Countdown until 4am" when the next 4am is
     /// later today (between midnight and 4am).
     static func fourAMMenuTitle(now: Date = Date(), calendar: Calendar = .current) -> String {
         let fourAM = CountdownModel.nextFourAM(after: now, calendar: calendar)
-        return calendar.isDate(fourAM, inSameDayAs: now) ? "Hide until 4am" : "Hide until tomorrow, 4am"
+        return calendar.isDate(fourAM, inSameDayAs: now) ? "Hide Countdown until 4am" : "Hide Countdown until tomorrow, 4am"
     }
 
     /// "Hidden until today 04:00", "Hidden until tomorrow 04:00", or with the

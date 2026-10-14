@@ -15,6 +15,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     var overlayPanel: OverlayPanel?
     private var settingsPanel: NSPanel?
+    private var hideUntilPanel: NSPanel?
     private var panelPlacement = OverlayFramePlacement(initialFrame: .zero, restoredOrigin: nil)
     private var measurementCache = OverlayMeasurementCache()
     private var transitionState = OverlayTransitionState()
@@ -80,6 +81,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         panel.onToggleCompact = { [weak self] in
             self?.calendarManager.model.toggleCompactMode()
+        }
+        panel.onHideUntilFourAM = { [weak self] in
+            self?.calendarManager.model.hide(until: CountdownModel.nextFourAM(after: Date()))
+        }
+        panel.onChooseHideTime = { [weak self] in
+            self?.showHideUntilPanel()
         }
         panel.onPositionChange = { [weak self] in
             guard let self, let panel = self.overlayPanel else { return }
@@ -208,6 +215,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         calendarManager.isSignedIn = true
 
         let model = calendarManager.model
+        // A hide left behind by an earlier preview would leave nothing to inspect.
+        model.showNow()
         model.sizeMode = ProcessInfo.processInfo.environment["PREVIEW_MODE"] == "compact"
             ? .compact : .standard
         model.showingEventDetails = true
@@ -253,17 +262,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Give the panel a moment to measure its content, then report where it
         // landed in the screencapture coordinate system.
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
-            guard let panel = self?.overlayPanel else { return }
-            let frame = panel.frame
-            // The screencapture origin is the top-left of the whole desktop, which
-            // is the top of whichever screen reaches highest.
-            let desktopMaxY = NSScreen.screens.map(\.frame.maxY).max() ?? 0
-            let topY = desktopMaxY - frame.maxY
-            FileHandle.standardError.write(
-                "PREVIEW_RECT \(Int(frame.minX)) \(Int(topY)) \(Int(frame.width)) \(Int(frame.height))\n"
-                    .data(using: .utf8)!
-            )
+            guard let self, let panel = self.overlayPanel else { return }
+            Self.logPreviewRect("PREVIEW_RECT", frame: panel.frame)
+
+            // `PREVIEW_PICKER=on` also opens the "Hide until…" window.
+            if ProcessInfo.processInfo.environment["PREVIEW_PICKER"] == "on" {
+                self.showHideUntilPanel()
+                if let picker = self.hideUntilPanel {
+                    Self.logPreviewRect("PICKER_RECT", frame: picker.frame)
+                }
+            }
         }
+    }
+
+    private static func logPreviewRect(_ label: String, frame: CGRect) {
+        // The screencapture origin is the top-left of the whole desktop, which
+        // is the top of whichever screen reaches highest.
+        let desktopMaxY = NSScreen.screens.map(\.frame.maxY).max() ?? 0
+        let topY = desktopMaxY - frame.maxY
+        FileHandle.standardError.write(
+            "\(label) \(Int(frame.minX)) \(Int(topY)) \(Int(frame.width)) \(Int(frame.height))\n"
+                .data(using: .utf8)!
+        )
     }
 
     private var settingsPreviewWindow: NSWindow?
@@ -287,6 +307,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.setActivationPolicy(.regular)
 
         let state = ProcessInfo.processInfo.environment["PREVIEW_STATE"] ?? "empty"
+        calendarManager.model.showNow()
 
         calendarManager.config = Config(clientID: "preview", clientSecret: "preview")
 
@@ -304,6 +325,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 endTime: Date().addingTimeInterval(38 * 60),
                 hasOtherAttendees: true
             )
+        case "hidden":
+            calendarManager.isSignedIn = true
+            calendarManager.setPreviewCalendars(Self.previewCalendars)
+            calendarManager.model.hide(until: CountdownModel.nextFourAM(after: Date()))
         case "no-config":
             calendarManager.config = nil
             calendarManager.isSignedIn = false
@@ -373,6 +398,41 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.activate(ignoringOtherApps: true)
 
         settingsPanel = panel
+    }
+
+    private func showHideUntilPanel() {
+        if let existing = hideUntilPanel, existing.isVisible {
+            existing.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            return
+        }
+
+        let panel = NSPanel(
+            contentRect: NSRect(x: 0, y: 0, width: 280, height: 320),
+            styleMask: [.titled, .closable],
+            backing: .buffered,
+            defer: false
+        )
+        panel.title = "Hide Countdown"
+        let picker = HideUntilPickerView(
+            initialDate: CountdownModel.nextFourAM(after: Date()),
+            onHide: { [weak self, weak panel] date in
+                self?.calendarManager.model.hide(until: date)
+                panel?.close()
+            },
+            onCancel: { [weak panel] in
+                panel?.close()
+            }
+        )
+        let hostingView = NSHostingView(rootView: picker)
+        panel.contentView = hostingView
+        panel.setContentSize(hostingView.fittingSize)
+        panel.center()
+        panel.isReleasedWhenClosed = false
+        panel.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+
+        hideUntilPanel = panel
     }
 
     private func updatePanel() {
