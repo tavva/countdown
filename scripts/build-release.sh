@@ -167,7 +167,7 @@ git worktree remove "$APPCAST_DIR"
 
 echo "==> Tagging $TAG..."
 git tag "$TAG"
-git push origin "$TAG"
+git push origin HEAD "$TAG"
 
 echo "==> Creating GitHub release..."
 gh release create "$TAG" "$DMG_PATH" \
