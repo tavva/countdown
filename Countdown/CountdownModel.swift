@@ -46,6 +46,13 @@ final class CountdownModel {
         didSet { defaults.set(showMeetingProgress, forKey: DefaultsKey.showMeetingProgress) }
     }
 
+    /// When set and still in the future, the overlay stays hidden until then,
+    /// however near the next event is. Cleared by `updateState()` once it passes.
+    private(set) var hiddenUntil: Date? = nil {
+        didSet { defaults.set(hiddenUntil, forKey: DefaultsKey.hiddenUntil) }
+    }
+    var isHidden: Bool { hiddenUntil != nil }
+
     private(set) var shouldShowOverlay: Bool = true
     private(set) var minutesRemaining: Int = 0
     private(set) var colourProgress: Double = 0.0  // 0 = green (60 min), 1 = red (0 min)
@@ -139,6 +146,23 @@ final class CountdownModel {
         } else {
             self.showingEventDetails = defaults.bool(forKey: DefaultsKey.showingEventDetails)
         }
+
+        if let stored = defaults.object(forKey: DefaultsKey.hiddenUntil) as? Date, stored > Date() {
+            self.hiddenUntil = stored
+            self.shouldShowOverlay = false
+        } else {
+            defaults.removeObject(forKey: DefaultsKey.hiddenUntil)
+        }
+    }
+
+    /// The first 4am after `date`: 4am today if it is still before then, else
+    /// 4am tomorrow.
+    static func nextFourAM(after date: Date, calendar: Calendar = .current) -> Date {
+        calendar.nextDate(
+            after: date,
+            matching: DateComponents(hour: 4, minute: 0, second: 0),
+            matchingPolicy: .nextTime
+        )!
     }
 
     func setEvents(_ events: [CalendarEvent]) {
@@ -194,6 +218,15 @@ final class CountdownModel {
 
     func updateState() {
         updateMeetingProgress()
+
+        if let hiddenUntil {
+            if hiddenUntil > Date() {
+                shouldShowOverlay = false
+                isFlashing = false
+                return
+            }
+            self.hiddenUntil = nil
+        }
 
         if isLoading {
             shouldShowOverlay = true
@@ -289,6 +322,16 @@ final class CountdownModel {
         isFlashing = false
     }
 
+    func hide(until date: Date) {
+        hiddenUntil = date
+        updateState()
+    }
+
+    func showNow() {
+        hiddenUntil = nil
+        updateState()
+    }
+
     func dismiss() {
         dismissedEventID = nextEvent?.id
         shouldShowOverlay = false
@@ -307,4 +350,5 @@ private enum DefaultsKey {
     static let sizeMode = "sizeMode"
     static let autoReposition = "autoReposition"
     static let repositionCorner = "repositionCorner"
+    static let hiddenUntil = "hiddenUntil"
 }

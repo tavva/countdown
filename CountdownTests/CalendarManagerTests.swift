@@ -40,7 +40,7 @@ struct CalendarManagerTests {
     private let _snapshot = DefaultsSnapshot(keys: [
         "meetingsOnly", "enabledCalendarIDs",
         "hideDeclinedEvents", "hideTasksAndBirthdays", "hideFocusTime",
-        "showMeetingProgress",
+        "showMeetingProgress", "hiddenUntil",
     ])
 
     @Test @MainActor func setShowMeetingProgressUpdatesOverlayImmediately() {
