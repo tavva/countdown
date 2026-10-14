@@ -2,7 +2,7 @@
 
 ## Purpose
 
-During a workshop or a day with other people, the countdown overlay is a
+During a workshop or a day with other people, the Countdown overlay is a
 distraction. Ben wants to hide it for a while, usually until the next morning,
 and have it come back on its own.
 
@@ -12,10 +12,10 @@ and have it come back on its own.
 
 The overlay's right-click menu gains two items:
 
-- **Hide until tomorrow, 4am** — hides until the next 4am. If it is already
-  past midnight but before 4am, that is 4am today, and the label reads
-  "Hide until 4am" instead.
-- **Hide until…** — opens a small window with a date-and-time picker, defaulting
+- **Hide Countdown until tomorrow, 4am** — hides until the next 4am. If it is
+  already past midnight but before 4am, that is 4am today, and the label reads
+  "Hide Countdown until 4am" instead.
+- **Hide Countdown until…** — opens a small window with a date-and-time picker, defaulting
   to the next 4am, with past times disallowed, and Hide / Cancel buttons.
 
 ### While hidden

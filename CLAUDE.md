@@ -60,7 +60,7 @@ CircleView renders animated countdown circle
 ### State Persistence
 
 - **Keychain**: OAuth refresh + access tokens (via `Keychain.swift` wrapper around Security framework)
-- **UserDefaults**: `enabledCalendarIDs`, `meetingsOnly`, overlay position (`overlayX`/`overlayY`)
+- **UserDefaults**: `enabledCalendarIDs`, `meetingsOnly`, overlay position (`overlayX`/`overlayY`), `hiddenUntil` (overlay hidden until this time, set from the right-click menu)
 
 Settings are read and written through `UserDefaults.app` (`AppDefaults.swift`),
 never `UserDefaults.standard` directly. Tests and preview builds run under the
@@ -91,7 +91,9 @@ APP="$(xcodebuild -project Countdown.xcodeproj -scheme Countdown -configuration 
 Environment variables: `PREVIEW_MODE=compact` for the compact size,
 `PREVIEW_BAR=off` to hide the meeting progress bar, `PREVIEW_NEXT=none` to drop
 the upcoming meeting (leaving the idle grey dot beside a bar for the meeting
-still under way). Lives in `AppDelegate.setupOverlayPreview` behind `#if DEBUG`.
+still under way), `PREVIEW_PICKER=on` to also open the "Hide until…" window
+(its rect is logged as `PICKER_RECT`). Any saved hide is cleared at launch. Lives
+in `AppDelegate.setupOverlayPreview` behind `#if DEBUG`.
 
 ## Settings UI Preview Harness
 
@@ -109,7 +111,7 @@ pkill -x Countdown
 The preview path:
 - Skips `loadStoredTokens()` so there's no Keychain prompt for the unsigned debug build
 - Sets fake `CalendarManager` state via the `#if DEBUG` `setPreviewCalendars(_:)` helper
-- Reads a `PREVIEW_STATE` env var to switch between `empty` (default), `with-event`, `signed-out`, `no-config`
+- Reads a `PREVIEW_STATE` env var to switch between `empty` (default), `with-event`, `signed-out`, `no-config`, `hidden` (overlay hidden until the next 4am, showing the "Hidden until" banner)
 - Logs a `PREVIEW_RECT <x> <y> <w> <h>` line to stderr in the screencapture coordinate system, ready to feed into `screencapture -R`
 - Lives entirely behind `#if DEBUG`, so it's compiled out of release builds
 

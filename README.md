@@ -31,6 +31,7 @@
 - **Meetings filter** — optionally show only events with other attendees
 - **Time left in the current meeting** — optional bar under the circle showing how much of the meeting you're in is left
 - **Tap for details** — tap the circle to see event name and time range
+- **Hide until later** — right-click the circle to hide it until 4am or a time you choose; bring it back early from the menu bar
 - **Launch at login** — start automatically when you log in
 - **Zero dependencies** — built entirely with native Swift, SwiftUI, and AppKit
 
