@@ -11,6 +11,12 @@ struct SettingsView: View {
 
     var body: some View {
         let content = VStack(alignment: .leading, spacing: 0) {
+            if let hiddenUntil = manager.model.hiddenUntil {
+                hiddenBanner(until: hiddenUntil)
+                    .padding(.top, 10)
+                    .padding(.bottom, 6)
+            }
+
             if manager.config == nil {
                 setupNotice
                     .padding(.bottom, 16)
@@ -70,6 +76,29 @@ struct SettingsView: View {
         }
         .padding(10)
         .background(Color.orange.opacity(0.12), in: RoundedRectangle(cornerRadius: 8))
+    }
+
+    private func hiddenBanner(until date: Date) -> some View {
+        HStack(alignment: .center, spacing: 10) {
+            Image(systemName: "eye.slash")
+                .foregroundStyle(.secondary)
+                .font(.system(size: 13))
+            Text(HideUntilText.hiddenUntil(date))
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(.primary)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+            Button("Show now") {
+                manager.model.showNow()
+            }
+            .controlSize(.small)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 9)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color.accentColor.opacity(0.12))
+        )
     }
 
     private func errorBanner(_ message: String) -> some View {

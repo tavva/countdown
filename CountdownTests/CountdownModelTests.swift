@@ -11,6 +11,7 @@ struct CountdownModelTests {
         "meetingsOnly", "showingEventDetails", "compactMode",
         "hideDeclinedEvents", "sizeMode", "autoReposition", "repositionCorner",
         "hideTasksAndBirthdays", "hideFocusTime", "showMeetingProgress",
+        "hiddenUntil",
     ])
 
     // MARK: - Loading state
@@ -1128,6 +1129,113 @@ struct CountdownModelTests {
         model.updateState()
         #expect(model.isShowingMeetingProgress == false)
         #expect(model.currentEvent == nil)
+    }
+
+    // MARK: - Hide until
+
+    private static func date(_ year: Int, _ month: Int, _ day: Int, _ hour: Int, _ minute: Int = 0) -> Date {
+        Calendar.current.date(from: DateComponents(year: year, month: month, day: day, hour: hour, minute: minute))!
+    }
+
+    @Test func nextFourAMAfterFourAMIsTomorrow() {
+        let now = Self.date(2026, 10, 14, 15, 30)
+        #expect(CountdownModel.nextFourAM(after: now) == Self.date(2026, 10, 15, 4))
+    }
+
+    @Test func nextFourAMBeforeFourAMIsToday() {
+        let now = Self.date(2026, 10, 14, 1, 15)
+        #expect(CountdownModel.nextFourAM(after: now) == Self.date(2026, 10, 14, 4))
+    }
+
+    @Test func nextFourAMAtExactlyFourAMIsTomorrow() {
+        let now = Self.date(2026, 10, 14, 4)
+        #expect(CountdownModel.nextFourAM(after: now) == Self.date(2026, 10, 15, 4))
+    }
+
+    @Test func hidingSuppressesOverlayImmediately() {
+        let model = CountdownModel()
+        model.setEvents([])
+        model.updateState()
+        #expect(model.shouldShowOverlay == true)
+
+        let until = Date().addingTimeInterval(60 * 60)
+        model.hide(until: until)
+        #expect(model.hiddenUntil == until)
+        #expect(model.isHidden == true)
+        #expect(model.shouldShowOverlay == false)
+
+        model.updateState()
+        #expect(model.shouldShowOverlay == false)
+    }
+
+    @Test func hidingSuppressesOverlayWhileLoading() {
+        let model = CountdownModel()
+        model.hide(until: Date().addingTimeInterval(60 * 60))
+        model.updateState()
+        #expect(model.isLoading == true)
+        #expect(model.shouldShowOverlay == false)
+    }
+
+    @Test func hidingSuppressesFlashingEvent() {
+        let model = CountdownModel()
+        model.setEvents([])
+        model.nextEvent = CalendarEvent(
+            id: "1",
+            summary: "Standup",
+            startTime: Date().addingTimeInterval(30),
+            endTime: Date().addingTimeInterval(30 * 60),
+            hasOtherAttendees: true
+        )
+        model.updateState()
+        #expect(model.isFlashing == true)
+
+        model.hide(until: Date().addingTimeInterval(60 * 60))
+        #expect(model.shouldShowOverlay == false)
+        #expect(model.isFlashing == false)
+    }
+
+    @Test func expiredHideRestoresOverlayAndClearsDate() {
+        let model = CountdownModel()
+        model.setEvents([])
+        model.hide(until: Date().addingTimeInterval(0.05))
+        #expect(model.shouldShowOverlay == false)
+
+        Thread.sleep(forTimeInterval: 0.1)
+        model.updateState()
+        #expect(model.hiddenUntil == nil)
+        #expect(model.isHidden == false)
+        #expect(model.shouldShowOverlay == true)
+        #expect(UserDefaults.app.object(forKey: "hiddenUntil") == nil)
+    }
+
+    @Test func hideIsRestoredByNewModel() {
+        let until = Date().addingTimeInterval(60 * 60)
+        CountdownModel().hide(until: until)
+
+        let restored = CountdownModel()
+        #expect(restored.hiddenUntil == until)
+        #expect(restored.shouldShowOverlay == false)
+    }
+
+    @Test func expiredStoredHideIsIgnoredByNewModel() {
+        UserDefaults.app.set(Date().addingTimeInterval(-60), forKey: "hiddenUntil")
+
+        let model = CountdownModel()
+        #expect(model.hiddenUntil == nil)
+        #expect(model.shouldShowOverlay == true)
+        #expect(UserDefaults.app.object(forKey: "hiddenUntil") == nil)
+    }
+
+    @Test func showNowClearsHideAndRestoresOverlay() {
+        let model = CountdownModel()
+        model.setEvents([])
+        model.hide(until: Date().addingTimeInterval(60 * 60))
+
+        model.showNow()
+        #expect(model.hiddenUntil == nil)
+        #expect(model.isHidden == false)
+        #expect(model.shouldShowOverlay == true)
+        #expect(CountdownModel().hiddenUntil == nil)
     }
 }
 

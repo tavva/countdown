@@ -11,7 +11,9 @@ struct CountdownApp: App {
         MenuBarExtra {
             SettingsView(manager: appDelegate.calendarManager, updateManager: appDelegate.updateManager)
         } label: {
-            if appDelegate.calendarManager.isSignedIn {
+            if appDelegate.calendarManager.isSignedIn && appDelegate.calendarManager.model.isHidden {
+                Image(systemName: "eye.slash")
+            } else if appDelegate.calendarManager.isSignedIn {
                 Image(systemName: "circle.fill")
                     .foregroundStyle(appDelegate.calendarManager.model.shouldShowOverlay ? .red : .gray)
             } else {
