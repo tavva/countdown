@@ -338,17 +338,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             calendarManager.setPreviewCalendars(Self.previewCalendars)
         }
 
+        if let tab = ProcessInfo.processInfo.environment["PREVIEW_TAB"].flatMap(SettingsTab.init(rawValue:)) {
+            tab.save()
+        }
+
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 320, height: 820),
-            styleMask: [.titled, .closable, .resizable],
+            contentRect: NSRect(x: 0, y: 0, width: 340, height: 500),
+            styleMask: [.titled, .closable],
             backing: .buffered,
             defer: false
         )
         window.title = "Settings Preview · \(state)"
         let hostingView = NSHostingView(
-            rootView: SettingsView(manager: calendarManager, updateManager: updateManager, maxContentHeight: nil)
+            rootView: SettingsView(manager: calendarManager, updateManager: updateManager)
         )
         window.contentView = hostingView
+        window.setContentSize(hostingView.fittingSize)
 
         if let screen = NSScreen.main {
             let visible = screen.visibleFrame

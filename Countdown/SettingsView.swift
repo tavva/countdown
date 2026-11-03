@@ -1,5 +1,5 @@
-// ABOUTME: Menu bar popover showing event status, Google account controls, and event filter.
-// ABOUTME: Provides connect/disconnect for Google Calendar, a meetings-only toggle, and calendar selection.
+// ABOUTME: Menu bar pop-up with the app's settings, split into Circle, Events, Calendars and General tabs.
+// ABOUTME: Signed out, it shows the Google sign-in button (or the Config.plist notice) instead of the tabs.
 
 import ServiceManagement
 import SwiftUI
@@ -7,61 +7,80 @@ import SwiftUI
 struct SettingsView: View {
     @Bindable var manager: CalendarManager
     let updateManager: UpdateManager
-    var maxContentHeight: CGFloat? = 720
+
+    @State private var selectedTab = SettingsTab.restore()
+    /// Calendar IDs in display order: enabled calendars first. Recomputed when
+    /// the Calendars tab appears or the calendar list changes, not on every
+    /// toggle, so a row doesn't jump away from the pointer when it's clicked.
+    @State private var calendarOrder: [String] = []
+
+    private static let width: CGFloat = 340
+    private static let signedInHeight: CGFloat = 500
 
     var body: some View {
-        let content = VStack(alignment: .leading, spacing: 0) {
-            if let hiddenUntil = manager.model.hiddenUntil {
-                hiddenBanner(until: hiddenUntil)
-                    .padding(.top, 10)
-                    .padding(.bottom, 6)
-            }
+        VStack(alignment: .leading, spacing: 0) {
+            header
 
-            if manager.config == nil {
-                setupNotice
-                    .padding(.bottom, 16)
-            }
+            banners
 
             if manager.isSignedIn {
-                displaySection
-                sectionDivider
-                eventsSection
-                if !manager.calendars.isEmpty {
-                    sectionDivider
-                    calendarsSection
-                }
-                sectionDivider
+                tabBar
+                tabContent
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            } else {
+                signedOutContent
             }
-
-            accountSection
-
-            if let error = manager.errorMessage {
-                errorBanner(error)
-                    .padding(.top, 14)
-            }
-
-            sectionDivider
-
-            generalSection
 
             footer
-                .padding(.top, 14)
         }
-        .padding(.horizontal, 16)
-        .padding(.top, 4)
-        .padding(.bottom, 12)
-        .frame(width: 300, alignment: .leading)
-
-        if let maxContentHeight {
-            ScrollView { content }
-                .frame(width: 300)
-                .frame(maxHeight: maxContentHeight)
-        } else {
-            content
+        .frame(width: Self.width, height: manager.isSignedIn ? Self.signedInHeight : nil, alignment: .top)
+        .onChange(of: selectedTab) { _, tab in
+            tab.save()
         }
     }
 
-    // MARK: - Setup notice
+    // MARK: - Header
+
+    private var header: some View {
+        HStack(spacing: 10) {
+            Image(nsImage: NSApp.applicationIconImage)
+                .resizable()
+                .frame(width: 28, height: 28)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Countdown")
+                    .font(.system(size: 13, weight: .semibold))
+                HStack(spacing: 5) {
+                    Circle()
+                        .fill(manager.isSignedIn ? Color.green : Color.secondary)
+                        .frame(width: 6, height: 6)
+                    Text(manager.isSignedIn ? "Google Calendar connected" : "Not connected")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                }
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 14)
+        .padding(.bottom, 10)
+    }
+
+    // MARK: - Banners
+
+    @ViewBuilder
+    private var banners: some View {
+        if let hiddenUntil = manager.model.hiddenUntil {
+            hiddenBanner(until: hiddenUntil)
+                .padding(.horizontal, 12)
+                .padding(.bottom, 10)
+        }
+
+        if let error = manager.errorMessage {
+            errorBanner(error)
+                .padding(.horizontal, 12)
+                .padding(.bottom, 10)
+        }
+    }
 
     private var setupNotice: some View {
         HStack(alignment: .top, spacing: 10) {
@@ -81,7 +100,7 @@ struct SettingsView: View {
     private func hiddenBanner(until date: Date) -> some View {
         HStack(alignment: .center, spacing: 10) {
             Image(systemName: "eye.slash")
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.accentColor)
                 .font(.system(size: 13))
             Text(HideUntilText.hiddenUntil(date))
                 .font(.system(size: 12, weight: .medium))
@@ -92,12 +111,14 @@ struct SettingsView: View {
                 manager.model.showNow()
             }
             .controlSize(.small)
+            .buttonStyle(.borderedProminent)
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 9)
+        .padding(.leading, 12)
+        .padding(.trailing, 10)
+        .padding(.vertical, 8)
         .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(Color.accentColor.opacity(0.12))
+            RoundedRectangle(cornerRadius: 10)
+                .fill(Color.accentColor.opacity(0.16))
         )
     }
 
@@ -113,298 +134,373 @@ struct SettingsView: View {
             Spacer(minLength: 0)
         }
         .padding(10)
-        .background(Color.red.opacity(0.12), in: RoundedRectangle(cornerRadius: 8))
+        .background(Color.red.opacity(0.12), in: RoundedRectangle(cornerRadius: 10))
     }
 
-    // MARK: - Sections
+    // MARK: - Tabs
+
+    private var tabBar: some View {
+        HStack(spacing: 4) {
+            ForEach(SettingsTab.allCases, id: \.self) { tab in
+                tabButton(tab)
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.bottom, 12)
+    }
+
+    private func tabButton(_ tab: SettingsTab) -> some View {
+        let isSelected = tab == selectedTab
+        return Button {
+            selectedTab = tab
+        } label: {
+            VStack(spacing: 3) {
+                Image(systemName: tab.symbolName)
+                    .font(.system(size: 15))
+                    .frame(height: 18)
+                Text(tab.title)
+                    .font(.system(size: 11))
+            }
+            .foregroundStyle(isSelected ? .primary : .secondary)
+            .frame(maxWidth: .infinity)
+            .padding(.top, 7)
+            .padding(.bottom, 5)
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(isSelected ? Color.primary.opacity(0.1) : Color.clear)
+            )
+            .contentShape(RoundedRectangle(cornerRadius: 8))
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
 
     @ViewBuilder
-    private var displaySection: some View {
-        section("Display") {
-            labeledControl("Circle size", trailingLabelAccessory: AnyView(AutoModeHelpButton())) {
-                Picker("", selection: sizeModeBinding) {
+    private var tabContent: some View {
+        switch selectedTab {
+        case .circle: circleTab
+        case .events: eventsTab
+        case .calendars: calendarsTab
+        case .general: generalTab
+        }
+    }
+
+    // MARK: - Circle tab
+
+    private var circleTab: some View {
+        card {
+            settingRow("Size") {
+                Picker("Size", selection: sizeModeBinding) {
                     Text("Standard").tag(SizeMode.standard)
                     Text("Compact").tag(SizeMode.compact)
                     Text("Auto").tag(SizeMode.auto)
                 }
-                .pickerStyle(.segmented)
+                .pickerStyle(.menu)
                 .labelsHidden()
+                .fixedSize()
             }
+            rowCaption("Auto is compact on the built-in display, and standard when an external display is connected.")
+            rowSeparator
+            switchRow("Show event details", isOn: showEventDetailsBinding)
+            rowSeparator
+            switchRow("Show time left in meeting", isOn: showMeetingProgressBinding)
+            rowSeparator
+            switchRow("Move when displays change", isOn: autoRepositionBinding)
 
-            labeledControl("Event details") {
-                Picker("", selection: showEventDetailsBinding) {
-                    Text("Show").tag(true)
-                    Text("Hide").tag(false)
+            if manager.model.autoReposition {
+                HStack(spacing: 12) {
+                    Text("To corner")
+                        .foregroundStyle(.secondary)
+                    Spacer(minLength: 0)
+                    ScreenCornerPicker(selection: repositionCornerBinding)
                 }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-            }
-
-            inlineToggle("Show time left in current meeting", isOn: showMeetingProgressBinding)
-
-            VStack(alignment: .leading, spacing: 10) {
-                inlineToggle("Auto-reposition on display change", isOn: autoRepositionBinding)
-
-                if manager.model.autoReposition {
-                    Picker("", selection: repositionCornerBinding) {
-                        Image(systemName: "arrow.up.left").tag(ScreenCorner.topLeft)
-                        Image(systemName: "arrow.up.right").tag(ScreenCorner.topRight)
-                        Image(systemName: "arrow.down.left").tag(ScreenCorner.bottomLeft)
-                        Image(systemName: "arrow.down.right").tag(ScreenCorner.bottomRight)
-                    }
-                    .pickerStyle(.segmented)
-                    .labelsHidden()
-                    .padding(.leading, 26)
-                    .transition(.opacity.combined(with: .move(edge: .top)))
-                }
+                .frame(minHeight: 40)
+                .padding(.leading, 28)
+                .padding(.trailing, 12)
+                .padding(.bottom, 6)
+                .transition(.opacity)
             }
         }
         .animation(.default, value: manager.model.autoReposition)
+        .padding(.horizontal, 12)
     }
 
-    @ViewBuilder
-    private var eventsSection: some View {
-        section("Events") {
-            labeledControl("Show countdown for") {
-                Picker("", selection: meetingsOnlyBinding) {
+    // MARK: - Events tab
+
+    private var eventsTab: some View {
+        card {
+            settingRow("Count down to") {
+                Picker("Count down to", selection: meetingsOnlyBinding) {
                     Text("All events").tag(false)
                     Text("Meetings only").tag(true)
                 }
-                .pickerStyle(.segmented)
+                .pickerStyle(.menu)
                 .labelsHidden()
+                .fixedSize()
             }
-
-            inlineToggle("Hide declined & cancelled", isOn: hideDeclinedBinding)
-            inlineToggle("Hide tasks & birthdays", isOn: hideTasksAndBirthdaysBinding)
-            inlineToggle("Hide focus time", isOn: hideFocusTimeBinding)
+            rowCaption("Meetings are events with at least one other guest.")
+            rowSeparator
+            switchRow("Skip declined & cancelled", isOn: hideDeclinedBinding)
+            rowSeparator
+            switchRow("Skip tasks & birthdays", isOn: hideTasksAndBirthdaysBinding)
+            rowSeparator
+            switchRow("Skip focus time", isOn: hideFocusTimeBinding)
         }
+        .padding(.horizontal, 12)
     }
 
-    @ViewBuilder
-    private var calendarsSection: some View {
-        section("Calendars") {
-            ScrollView(.vertical, showsIndicators: true) {
-                VStack(spacing: 0) {
-                    ForEach(Array(manager.calendars.enumerated()), id: \.element.id) { index, calendar in
-                        HStack(spacing: 10) {
-                            Circle()
-                                .fill(Color(hex: calendar.backgroundColor))
-                                .frame(width: 10, height: 10)
-                            Text(calendar.summary)
-                                .font(.system(size: 12))
-                                .lineLimit(1)
-                                .truncationMode(.tail)
-                            Spacer(minLength: 8)
-                            Toggle("", isOn: Binding(
-                                get: { manager.isCalendarEnabled(calendar.id) },
-                                set: { _ in manager.toggleCalendar(calendar.id) }
-                            ))
-                            .toggleStyle(.switch)
-                            .controlSize(.mini)
-                            .labelsHidden()
-                        }
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 7)
+    // MARK: - Calendars tab
 
-                        if index < manager.calendars.count - 1 {
-                            Divider().padding(.leading, 30)
+    private var calendarsTab: some View {
+        card {
+            if manager.calendars.isEmpty {
+                Text("No calendars found.")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                ScrollView(.vertical) {
+                    LazyVStack(spacing: 0) {
+                        let calendars = orderedCalendars
+                        ForEach(Array(calendars.enumerated()), id: \.element.id) { index, calendar in
+                            calendarRow(calendar)
+                            if index < calendars.count - 1 {
+                                rowSeparator
+                            }
                         }
                     }
                 }
-                .frame(maxWidth: .infinity, alignment: .top)
+                .scrollIndicators(.automatic)
             }
-            .scrollIndicators(.visible)
-            .defaultScrollAnchor(.top)
-            .frame(height: calendarsListMaxHeight)
-            .background(
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(Color.primary.opacity(0.04))
-            )
-            .overlay(alignment: .bottom) {
-                if manager.calendars.count > visibleCalendarCap {
-                    LinearGradient(
-                        colors: [Color.clear, Color.black.opacity(0.18)],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                    .frame(height: 18)
-                    .allowsHitTesting(false)
-                    .clipShape(
-                        UnevenRoundedRectangle(
-                            cornerRadii: .init(bottomLeading: 8, bottomTrailing: 8),
-                            style: .continuous
-                        )
-                    )
-                }
-            }
-            .overlay(
-                RoundedRectangle(cornerRadius: 8)
-                    .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
-            )
         }
+        .frame(maxHeight: .infinity)
+        .padding(.horizontal, 12)
+        .padding(.bottom, 12)
+        .onAppear(perform: sortCalendars)
+        .onChange(of: manager.calendars.map(\.id)) { sortCalendars() }
     }
 
-    private var visibleCalendarCap: Int { 6 }
-
-    /// Caps the calendars list at roughly six visible rows; beyond that the
-    /// list scrolls in place so the surrounding sections stay in view.
-    private var calendarsListMaxHeight: CGFloat {
-        let approxRowHeight: CGFloat = 30
-        return approxRowHeight * CGFloat(visibleCalendarCap)
+    private func calendarRow(_ calendar: CalendarInfo) -> some View {
+        HStack(spacing: 10) {
+            Circle()
+                .fill(Color(hex: calendar.backgroundColor))
+                .frame(width: 10, height: 10)
+            Text(calendar.summary)
+                .lineLimit(1)
+                .truncationMode(.tail)
+            Spacer(minLength: 8)
+            Toggle(calendar.summary, isOn: Binding(
+                get: { manager.isCalendarEnabled(calendar.id) },
+                set: { _ in manager.toggleCalendar(calendar.id) }
+            ))
+            .toggleStyle(.checkbox)
+            .labelsHidden()
+        }
+        .frame(minHeight: 34)
+        .padding(.horizontal, 12)
     }
 
-    @ViewBuilder
-    private var accountSection: some View {
-        section("Account") {
-            if manager.isSignedIn {
-                HStack(spacing: 10) {
-                    Image(systemName: "checkmark.seal.fill")
-                        .foregroundStyle(.green)
-                        .font(.system(size: 14))
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text("Google Calendar")
-                            .font(.system(size: 12, weight: .medium))
-                        Text("Connected")
-                            .font(.system(size: 10))
-                            .foregroundStyle(.secondary)
-                    }
-                    Spacer()
-                    Button("Disconnect") {
-                        Task { await manager.signOut() }
+    /// Enabled calendars first, otherwise in the order Google returns them.
+    private func sortCalendars() {
+        let calendars = manager.calendars
+        let enabled = calendars.filter { manager.isCalendarEnabled($0.id) }
+        let disabled = calendars.filter { !manager.isCalendarEnabled($0.id) }
+        calendarOrder = (enabled + disabled).map(\.id)
+    }
+
+    /// The calendars in `calendarOrder`, with any not yet placed at the end.
+    private var orderedCalendars: [CalendarInfo] {
+        let position = Dictionary(uniqueKeysWithValues: calendarOrder.enumerated().map { ($1, $0) })
+        return manager.calendars.enumerated()
+            .sorted { lhs, rhs in
+                let l = position[lhs.element.id] ?? calendarOrder.count + lhs.offset
+                let r = position[rhs.element.id] ?? calendarOrder.count + rhs.offset
+                return l < r
+            }
+            .map(\.element)
+    }
+
+    // MARK: - General tab
+
+    private var generalTab: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            card {
+                switchRow("Open at login", isOn: launchAtLoginBinding)
+                rowSeparator
+                settingRow("Updates") {
+                    Button("Check now") {
+                        updateManager.checkForUpdates()
                     }
                     .controlSize(.small)
+                    .disabled(!updateManager.canCheckForUpdates)
                 }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 9)
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(Color.primary.opacity(0.04))
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
-                )
-            } else if manager.config != nil {
-                Button {
-                    Task { await manager.signIn() }
-                } label: {
-                    Image("GoogleSignIn")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(height: 36)
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.plain)
             }
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Account")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 4)
+                card {
+                    HStack(spacing: 10) {
+                        Image(systemName: "calendar")
+                            .font(.system(size: 18))
+                            .foregroundStyle(.secondary)
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text("Google Calendar")
+                            Text("Connected")
+                                .font(.system(size: 11))
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer(minLength: 0)
+                        Button("Disconnect") {
+                            Task { await manager.signOut() }
+                        }
+                        .controlSize(.small)
+                    }
+                    .frame(minHeight: 48)
+                    .padding(.horizontal, 12)
+                }
+            }
+
+            Spacer(minLength: 0)
+
+            trademarkLine
         }
+        .padding(.horizontal, 12)
     }
 
-    @ViewBuilder
-    private var generalSection: some View {
-        section("General") {
-            inlineToggle("Launch at login", isOn: launchAtLoginBinding)
+    // MARK: - Signed out
 
-            Button {
-                updateManager.checkForUpdates()
-            } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "arrow.down.circle")
-                        .font(.system(size: 11))
-                    Text("Check for updates…")
-                        .font(.system(size: 12))
+    private var signedOutContent: some View {
+        VStack(spacing: 0) {
+            VStack(spacing: 14) {
+                Text("Connect your calendar")
+                    .font(.system(size: 15, weight: .semibold))
+                Text("Countdown reads your Google Calendar and shows a circle counting down to your next event.")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                if manager.config == nil {
+                    setupNotice
+                } else {
+                    Button {
+                        Task { await manager.signIn() }
+                    } label: {
+                        Image("GoogleSignIn")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(height: 36)
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.plain)
                 }
-                .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.bordered)
-            .controlSize(.small)
-            .disabled(!updateManager.canCheckForUpdates)
+            .padding(.horizontal, 28)
+            .padding(.top, 14)
+            .padding(.bottom, 24)
+
+            trademarkLine
         }
     }
 
     // MARK: - Footer
 
-    @ViewBuilder
-    private var footer: some View {
-        VStack(spacing: 6) {
-            Divider()
-                .padding(.bottom, 2)
+    private var trademarkLine: some View {
+        Text("Google Calendar is a trademark of Google LLC")
+            .font(.system(size: 10))
+            .foregroundStyle(.tertiary)
+            .frame(maxWidth: .infinity, alignment: .center)
+            .padding(.bottom, 8)
+    }
 
+    private var footer: some View {
+        VStack(spacing: 0) {
+            Divider()
             HStack {
                 Text(versionString)
-                    .font(.system(size: 10))
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(.secondary)
                 Spacer()
-                Button("Quit Countdown") {
+                Button {
                     NSApp.terminate(nil)
+                } label: {
+                    HStack(spacing: 6) {
+                        Text("Quit")
+                            .foregroundStyle(.secondary)
+                        Text("⌘Q")
+                            .foregroundStyle(.tertiary)
+                    }
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .font(.system(size: 11))
-                .foregroundStyle(.secondary)
+                .keyboardShortcut("q")
             }
-
-            Text("Google Calendar is a trademark of Google LLC")
-                .font(.system(size: 9))
-                .foregroundStyle(.tertiary)
-                .frame(maxWidth: .infinity, alignment: .center)
-                .padding(.top, 2)
+            .font(.system(size: 11))
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
         }
     }
 
     private var versionString: String {
         let v = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "—"
-        return "Countdown v\(v)"
+        return "v\(v)"
     }
 
-    // MARK: - Section + control helpers
+    // MARK: - Card + row helpers
 
-    @ViewBuilder
-    private func section<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(title.uppercased())
-                .font(.system(size: 10, weight: .bold))
-                .tracking(0.8)
-                .foregroundStyle(.secondary)
+    /// A grouped, rounded card holding rows separated by inset dividers.
+    private func card<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
             content()
         }
-        .padding(.vertical, 14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(Color.primary.opacity(0.04))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
+        )
     }
 
-    private var sectionDivider: some View {
-        Rectangle()
-            .fill(Color.primary.opacity(0.08))
-            .frame(height: 1)
-            .frame(maxWidth: .infinity)
-    }
-
-    private enum LabelStyle { case primary, secondary }
-
-    @ViewBuilder
-    private func labeledControl<Content: View>(
-        _ label: String,
-        labelStyle: LabelStyle = .primary,
-        trailingLabelAccessory: AnyView? = nil,
-        @ViewBuilder content: () -> Content
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 4) {
-                Text(label)
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(labelStyle == .primary ? .secondary : .tertiary)
-                if let trailingLabelAccessory { trailingLabelAccessory }
-            }
-            content()
-                .frame(maxWidth: .infinity)
-        }
-    }
-
-    @ViewBuilder
-    private func inlineToggle(_ label: String, isOn: Binding<Bool>) -> some View {
-        Toggle(isOn: isOn) {
+    /// A label on the left with its control on the right.
+    private func settingRow<Control: View>(_ label: String, @ViewBuilder control: () -> Control) -> some View {
+        HStack(spacing: 12) {
             Text(label)
-                .font(.system(size: 12))
+            Spacer(minLength: 0)
+            control()
         }
-        .toggleStyle(.switch)
-        .controlSize(.small)
+        .frame(minHeight: 36)
+        .padding(.horizontal, 12)
+    }
+
+    private func switchRow(_ label: String, isOn: Binding<Bool>) -> some View {
+        settingRow(label) {
+            Toggle(label, isOn: isOn)
+                .toggleStyle(.switch)
+                .controlSize(.small)
+                .labelsHidden()
+        }
+    }
+
+    /// A secondary note under the row above it.
+    private func rowCaption(_ text: String) -> some View {
+        Text(text)
+            .font(.system(size: 11))
+            .foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.horizontal, 12)
+            .padding(.top, -4)
+            .padding(.bottom, 10)
+    }
+
+    private var rowSeparator: some View {
+        Divider()
+            .padding(.leading, 12)
     }
 
     // MARK: - Bindings
@@ -490,24 +586,65 @@ struct SettingsView: View {
     }
 }
 
-private struct AutoModeHelpButton: View {
-    @State private var showingHelp = false
+private extension SettingsTab {
+    var title: String {
+        switch self {
+        case .circle: "Circle"
+        case .events: "Events"
+        case .calendars: "Calendars"
+        case .general: "General"
+        }
+    }
+
+    var symbolName: String {
+        switch self {
+        case .circle: "clock"
+        case .events: "line.3.horizontal.decrease"
+        case .calendars: "calendar"
+        case .general: "gearshape"
+        }
+    }
+}
+
+/// A small drawing of a screen whose four corners are buttons, for choosing
+/// where the circle moves to when displays change.
+private struct ScreenCornerPicker: View {
+    @Binding var selection: ScreenCorner
 
     var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 5)
+                .strokeBorder(Color.secondary, lineWidth: 1.5)
+            VStack(spacing: 0) {
+                HStack(spacing: 0) {
+                    cornerButton(.topLeft, label: "Top left")
+                    Spacer(minLength: 0)
+                    cornerButton(.topRight, label: "Top right")
+                }
+                Spacer(minLength: 0)
+                HStack(spacing: 0) {
+                    cornerButton(.bottomLeft, label: "Bottom left")
+                    Spacer(minLength: 0)
+                    cornerButton(.bottomRight, label: "Bottom right")
+                }
+            }
+            .padding(3.5)
+        }
+        .frame(width: 48, height: 31)
+    }
+
+    private func cornerButton(_ corner: ScreenCorner, label: String) -> some View {
         Button {
-            showingHelp.toggle()
+            selection = corner
         } label: {
-            Image(systemName: "questionmark.circle")
-                .foregroundStyle(.secondary)
-                .font(.system(size: 11))
+            RoundedRectangle(cornerRadius: 2)
+                .fill(selection == corner ? Color.accentColor : Color.secondary.opacity(0.45))
+                .frame(width: 12, height: 8)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .popover(isPresented: $showingHelp, arrowEdge: .bottom) {
-            Text("Auto uses the compact size when only your built-in display is active, and the standard size when an external display is connected.")
-                .font(.caption)
-                .frame(width: 220)
-                .padding(10)
-        }
+        .accessibilityLabel(label)
+        .accessibilityAddTraits(selection == corner ? .isSelected : [])
     }
 }
 

@@ -112,6 +112,7 @@ The preview path:
 - Skips `loadStoredTokens()` so there's no Keychain prompt for the unsigned debug build
 - Sets fake `CalendarManager` state via the `#if DEBUG` `setPreviewCalendars(_:)` helper
 - Reads a `PREVIEW_STATE` env var to switch between `empty` (default), `with-event`, `signed-out`, `no-config`, `hidden` (overlay hidden until the next 4am, showing the "Hidden until" banner)
+- Reads a `PREVIEW_TAB` env var (`circle`, `events`, `calendars`, `general`) to choose which tab the signed-in layout opens on; without it the last selected tab is used
 - Logs a `PREVIEW_RECT <x> <y> <w> <h>` line to stderr in the screencapture coordinate system, ready to feed into `screencapture -R`
 - Lives entirely behind `#if DEBUG`, so it's compiled out of release builds
 
