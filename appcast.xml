@@ -182,5 +182,15 @@
                  type="application/octet-stream"
                  sparkle:edSignature="CyGhSVfJzYt1e9pn5J0grUouE18eBIEhT1wRynR/eVm19/IlL73vWShSz1y+e4LBS6WdsJMAYBP0CFEVzp0iBQ==" length="3385705" />
     </item>
+    <item>
+      <title>Version 1.9.0</title>
+      <pubDate>Tue, 03 Nov 2026 14:46:36 +0000</pubDate>
+      <sparkle:version>1.9.0</sparkle:version>
+      <sparkle:shortVersionString>1.9.0</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <enclosure url="https://github.com/tavva/countdown/releases/download/v1.9.0/Countdown-1.9.0.dmg"
+                 type="application/octet-stream"
+                 sparkle:edSignature="Zx+Ovkfw4yT6+lQtbRoSfSMNg/v/J0ORQ7nGDYzNZ5YE238D2WAowCDicns7V+pUrohJhGcX7Kcyb+oQfVh/Cw==" length="3456512" />
+    </item>
   </channel>
 </rss>
