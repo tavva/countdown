@@ -70,7 +70,7 @@ enum GoogleAuth {
         clientID: String,
         clientSecret: String,
         redirectPort: UInt16,
-        session: URLSession = .shared
+        session: URLSession = .uncached
     ) async throws -> TokenResponse {
         var request = URLRequest(url: tokenURL)
         request.httpMethod = "POST"
@@ -96,7 +96,7 @@ enum GoogleAuth {
         refreshToken: String,
         clientID: String,
         clientSecret: String,
-        session: URLSession = .shared
+        session: URLSession = .uncached
     ) async throws -> RefreshedToken {
         var request = URLRequest(url: tokenURL)
         request.httpMethod = "POST"
@@ -116,7 +116,7 @@ enum GoogleAuth {
         return try JSONDecoder().decode(RefreshedToken.self, from: data)
     }
 
-    static func revokeToken(_ token: String, session: URLSession = .shared) async throws {
+    static func revokeToken(_ token: String, session: URLSession = .uncached) async throws {
         var request = URLRequest(url: revokeURL)
         request.httpMethod = "POST"
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
