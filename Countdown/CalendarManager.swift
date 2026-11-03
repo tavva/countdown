@@ -38,7 +38,7 @@ final class CalendarManager {
 
     var config: Config?
 
-    init(session: URLSession = .shared) {
+    init(session: URLSession = .uncached) {
         self.session = session
         self.calendarClient = CalendarClient(session: session)
         // Skip keychain access under XCTest: the test host is headless and each

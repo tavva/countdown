@@ -11,7 +11,7 @@ enum CalendarClientError: Error, Equatable {
 final class CalendarClient: Sendable {
     private let session: URLSession
 
-    init(session: URLSession = .shared) {
+    init(session: URLSession = .uncached) {
         self.session = session
     }
 
